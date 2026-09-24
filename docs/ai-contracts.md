@@ -1,8 +1,9 @@
 # Developer 4: integration contracts
 
 Based on `architecture.md` and Developer 2's `feature/books` commit 927c048.
-The `feature/ai` branch includes that existing scaffold as its base. Only the AI
-module and minimal app/route/build registration are changed.
+The AI module is integrated with the books, circulation, and admin modules on
+`main`. Shared route registration, navigation, environment settings, and Postman
+requests preserve each owner’s features.
 
 ## Ownership and dependencies
 

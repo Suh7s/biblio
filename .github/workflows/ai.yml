@@ -1,7 +1,7 @@
 name: LibraAI
 on:
   push:
-    branches: [feature/ai]
+    branches: [feature/ai, main]
   pull_request:
     paths: ['backend/**', 'frontend/**', '.github/workflows/ai.yml']
 jobs:

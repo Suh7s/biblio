@@ -7,3 +7,6 @@ coverage/
 playwright-report/
 test-results/
 .DS_Store
+backend/.env
+frontend/.env.local
+frontend/dist/

@@ -1,36 +1,804 @@
 {
   "info": {
     "name": "LIBRAMIND API",
-    "description": "Books and catalogue requests. Set baseUrl and token (a JWT for a USER or ADMIN) in the collection variables.",
+    "description": "Shared LibraMind API collection for Authentication, Books, Borrowing, Reservations, Fines, Notifications, AI, and Admin. Authentication requests are integration contracts; AI requires configured embeddings and indexed library resources.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
-    { "key": "token", "value": "" },
-    { "key": "bookId", "value": "" },
-    {"key": "userToken", "value": ""},
-    {"key": "adminToken", "value": ""},
-    {"key": "sourceId", "value": "library-notes"},
-    {"key": "licensedSourceText", "value": ""}
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "bookId",
+      "value": ""
+    },
+    {
+      "key": "userToken",
+      "value": ""
+    },
+    {
+      "key": "borrowId",
+      "value": ""
+    },
+    {
+      "key": "reservationId",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
+      "value": ""
+    },
+    {
+      "key": "userEmail",
+      "value": "demo.reader@example.edu"
+    },
+    {
+      "key": "userPassword",
+      "value": "ChangeMe123!"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "sourceId",
+      "value": "library-notes"
+    },
+    {
+      "key": "licensedSourceText",
+      "value": ""
+    }
   ],
   "item": [
     {
+      "name": "Authentication",
+      "description": "Register and sign in with HTTP-only cookie auth. Use the same cookie jar for protected endpoints.",
+      "item": [
+        {
+          "name": "Register user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Reader\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Registration accepted\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login accepted\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Current user loaded\",()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/logout",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Logout accepted\",()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Books",
       "item": [
-        { "name": "Browse books (USER or ADMIN)", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/books?page=1&limit=12&search=robotics&category=Engineering&sort=-year", "host": ["{{baseUrl}}"], "path": ["books"], "query": [{"key":"page","value":"1"},{"key":"limit","value":"12"},{"key":"search","value":"robotics"},{"key":"category","value":"Engineering"},{"key":"sort","value":"-year"}] }, "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] },
-        { "name": "Browse without token (401 failure case)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/books", "auth": { "type": "noauth" } }, "response": [] },
-        { "name": "Get book details", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/books/{{bookId}}", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] },
-        { "name": "Create book (ADMIN)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Modern Robotics\",\n  \"authors\": [\"Kevin M. Lynch\", \"Frank C. Park\"],\n  \"isbn\": \"9781107156302\",\n  \"description\": \"A comprehensive introduction to robotics.\",\n  \"category\": \"Engineering\",\n  \"tags\": [\"robotics\", \"control\"],\n  \"publisher\": \"Cambridge University Press\",\n  \"publicationYear\": 2017,\n  \"totalCopies\": 4,\n  \"availableCopies\": 4,\n  \"shelfLocation\": \"ENG-ROB-001\",\n  \"coverImage\": \"\"\n}" }, "url": "{{baseUrl}}/books", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) {", "  const body = pm.response.json();", "  if (body.data?.book?._id) pm.collectionVariables.set('bookId', body.data.book._id);", "}"] } }], "response": [] },
-        { "name": "Create book as USER (403 failure case)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"title\":\"Forbidden test\",\"authors\":[\"Test\"],\"isbn\":\"TEST-403\",\"category\":\"Test\",\"totalCopies\":1,\"availableCopies\":1}" }, "url": "{{baseUrl}}/books", "auth": { "type": "bearer", "bearer": [{ "key": "userToken", "value": "{{token}}", "type": "string" }] } }, "response": [] },
-        { "name": "Update book / inventory (ADMIN)", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"totalCopies\": 5,\n  \"availableCopies\": 5,\n  \"shelfLocation\": \"ENG-ROB-002\"\n}" }, "url": "{{baseUrl}}/books/{{bookId}}", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] },
-        { "name": "Reject invalid inventory (400 failure case)", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"totalCopies\":1,\"availableCopies\":2}" }, "url": "{{baseUrl}}/books/{{bookId}}", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] },
-        { "name": "Delete book (ADMIN; 409 if active circulation)", "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/books/{{bookId}}", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] }
+        {
+          "name": "Browse books (USER or ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/books?page=1&limit=12&search=robotics&category=Engineering&sort=-year",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "12"
+                },
+                {
+                  "key": "search",
+                  "value": "robotics"
+                },
+                {
+                  "key": "category",
+                  "value": "Engineering"
+                },
+                {
+                  "key": "sort",
+                  "value": "-year"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Browse without token (401 failure case)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/books",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get book details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/books/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create book (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Modern Robotics\",\n  \"authors\": [\"Kevin M. Lynch\", \"Frank C. Park\"],\n  \"isbn\": \"9781107156302\",\n  \"description\": \"A comprehensive introduction to robotics.\",\n  \"category\": \"Engineering\",\n  \"tags\": [\"robotics\", \"control\"],\n  \"publisher\": \"Cambridge University Press\",\n  \"publicationYear\": 2017,\n  \"totalCopies\": 4,\n  \"availableCopies\": 4,\n  \"shelfLocation\": \"ENG-ROB-001\",\n  \"coverImage\": \"\"\n}"
+            },
+            "url": "{{baseUrl}}/books",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  if (body.data?.book?._id) pm.collectionVariables.set('bookId', body.data.book._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create book as USER (403 failure case)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"title\":\"Forbidden test\",\"authors\":[\"Test\"],\"isbn\":\"TEST-403\",\"category\":\"Test\",\"totalCopies\":1,\"availableCopies\":1}"
+            },
+            "url": "{{baseUrl}}/books",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "userToken",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update book / inventory (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"totalCopies\": 5,\n  \"availableCopies\": 5,\n  \"shelfLocation\": \"ENG-ROB-002\"\n}"
+            },
+            "url": "{{baseUrl}}/books/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject invalid inventory (400 failure case)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"totalCopies\":1,\"availableCopies\":2}"
+            },
+            "url": "{{baseUrl}}/books/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete book (ADMIN; 409 if active circulation)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/books/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
       ]
     },
     {
       "name": "Categories",
       "item": [
-        { "name": "List categories (USER or ADMIN)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/categories", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] }
+        {
+          "name": "List categories (USER or ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/categories",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Borrowing",
+      "item": [
+        {
+          "name": "Borrow book \u2014 success",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/borrow/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Loan created', () => pm.response.to.have.status(201));",
+                  "const data = pm.response.json().data;",
+                  "if (data?.borrow?._id) pm.collectionVariables.set('borrowId', data.borrow._id);",
+                  "pm.test('Loan includes book and due date', () => { pm.expect(data.borrow.book).to.exist; pm.expect(data.borrow.dueDate).to.exist; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Borrow duplicate \u2014 expected 409",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/borrow/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Duplicate loan rejected', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My borrowing history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/borrow/my",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Borrow history loaded', () => pm.response.to.have.status(200));",
+                  "pm.test('History array returned', () => pm.expect(pm.response.json().data.borrows).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Renew loan \u2014 success",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/borrow/{{borrowId}}/renew",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Renewal accepted', () => pm.response.to.have.status(200));",
+                  "pm.test('Renewal count incremented', () => pm.expect(pm.response.json().data.borrow.renewedCount).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Return loan \u2014 success",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/borrow/{{borrowId}}/return",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Return accepted', () => pm.response.to.have.status(200));",
+                  "pm.test('Loan marked returned', () => pm.expect(pm.response.json().data.borrow.status).to.eql('RETURNED'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Reserve unavailable book \u2014 success",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/reservations/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reservation created', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json().data.reservation;",
+                  "if (r?._id) pm.collectionVariables.set('reservationId', r._id);",
+                  "pm.test('Queue position returned', () => pm.expect(r.position).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My reservations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/reservations/my",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reservations loaded', () => pm.response.to.have.status(200));",
+                  "pm.test('Reservation list returned', () => pm.expect(pm.response.json().data.reservations).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel reservation \u2014 success",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/reservations/{{reservationId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Reservation cancelled', () => pm.response.to.have.status(200));",
+                  "pm.test('Cancellation status returned', () => pm.expect(pm.response.json().data.reservation.status).to.eql('CANCELLED'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fines",
+      "item": [
+        {
+          "name": "Get my fines",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/fines/my",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Fines loaded', () => pm.response.to.have.status(200));",
+                  "pm.test('Fines and balance returned', () => { const d=pm.response.json().data; pm.expect(d.fines).to.be.an('array'); pm.expect(d.totalUnpaid).to.be.a('number'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List my notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/notifications",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Notifications loaded', () => pm.response.to.have.status(200));",
+                  "pm.test('Notification list and unread count returned', () => { const d=pm.response.json().data; pm.expect(d.notifications).to.be.an('array'); pm.expect(d.unread).to.be.a('number'); });",
+                  "const notices = pm.response.json().data.notifications;",
+                  "if (notices.length) pm.collectionVariables.set('notificationId', notices[0]._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mark notification read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/notifications/{{notificationId}}/read",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Notification marked read', () => pm.response.to.have.status(200));",
+                  "pm.test('Read state is true', () => pm.expect(pm.response.json().data.notification.read).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -480,6 +1248,245 @@
             }
           ],
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Run dashboard and analytics requests with an ADMIN JWT in token. Authorization checks cover unauthenticated and USER roles.",
+      "item": [
+        {
+          "name": "Dashboard statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/dashboard",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/users?page=1&limit=25",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List borrowings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/borrowings?page=1&limit=25",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List overdue borrowings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/borrowings?status=OVERDUE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List reservations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/reservations?page=1&limit=25",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/analytics",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject missing admin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/dashboard",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin endpoint rejects anonymous requests\",()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject USER on admin endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/dashboard",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin endpoint rejects USER role\",()=>pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

@@ -1,7 +1,7 @@
 # LibraAI setup and verification
 
-This is Developer 4's module on `feature/ai`, built on the existing
-`feature/books` scaffold. See [contracts](ai-contracts.md) before integration.
+This is Developer 4's AI module, integrated with the books, circulation and
+admin modules on `main`. See [contracts](ai-contracts.md) before integration.
 Node.js 22 or later is recommended. The AI module uses the existing Express,
 Mongoose, React, Router and Axios architecture. Tailwind utilities have an `ai-`
 prefix and no preflight so catalogue styles remain intact.
