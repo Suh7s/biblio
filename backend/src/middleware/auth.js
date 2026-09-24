@@ -6,7 +6,7 @@ export function authenticate(req, res, next) {
   if (!token) return res.status(401).json({ success: false, message: 'Authentication required.' });
   try {
     const claims = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: claims.id || claims.sub, role: claims.role };
+    req.user = { _id: claims.id || claims.sub, id: claims.id || claims.sub, role: claims.role };
     if (!req.user.id) throw new Error('Missing subject');
     next();
   } catch {

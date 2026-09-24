@@ -1,1 +1,2 @@
 .admin-actions{display:flex;gap:7px}.admin-actions button:first-child{color:#486550;border-color:#dce3da}.cancel-edit{margin-top:9px;border:0;background:transparent;color:#6b776d;font:11px 'DM Sans';cursor:pointer}
+.reserve-button{width:100%;height:42px;border:1px solid #dce3da;background:#f4f5ef;color:#395942;font:12px 'DM Sans';text-align:left;padding:0 17px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-top:8px}
