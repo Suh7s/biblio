@@ -1,7 +1,7 @@
 # LibraAI setup and verification
 
-This is Developer 4's AI module, integrated with the books, circulation and
-admin modules on `main`. See [contracts](ai-contracts.md) before integration.
+LibraAI is integrated with authentication, books, circulation, and admin
+modules on `main`. See [contracts](ai-contracts.md) for the shared interfaces.
 Node.js 22 or later is recommended. The AI module uses the existing Express,
 Mongoose, React, Router and Axios architecture. Tailwind utilities have an `ai-`
 prefix and no preflight so catalogue styles remain intact.
@@ -19,7 +19,7 @@ Set the following **server-side** in `backend/.env`:
 
 - `MONGODB_URI`: MongoDB Atlas or a local MongoDB **replica set**. Chunk replacement
   uses transactions; a standalone MongoDB server cannot perform indexing.
-- `JWT_SECRET`: the same secret as Developer 1's auth service.
+- `JWT_SECRET`: the application's shared signing secret, at least 32 random characters.
 - `OPENAI_API_KEY`: an API key with embedding and Responses API access.
 - `AI_VECTOR_MODE=atlas` for production, or `exact` for bounded local testing.
 - `CLIENT_ORIGIN`: the frontend origin, default `http://localhost:5173`.
@@ -35,12 +35,11 @@ npm run dev:api
 npm run dev:web
 ```
 
-Visit `/ai`. Sign in through Developer 1's shared authentication flow. The source
-branch currently contains the shared JWT middleware but no login implementation;
-this module does not add a competing authentication system. Postman accepts a
-valid shared JWT. Browser requests use the existing HTTP-only cookie contract.
-No books, mock embeddings, fake availability or example answers are shipped into
-the runtime app. Add actual catalogue records through Developer 2's APIs/UI.
+Register and sign in through `/register` and `/login`, then visit `/ai`. Browser
+requests use the shared HTTP-only cookie; Postman can use that cookie or a token
+from a real login response. No books, mock embeddings, fake availability or
+example answers are seeded into the runtime app. Add actual catalogue records
+through the ADMIN books API or `/admin/books`.
 
 ## Index library resources
 
@@ -60,11 +59,14 @@ Check their dimensions/filter fields manually when configuration changes.
 
 `ai:index` embeds real title/author/category/tag/description content and skips
 unchanged records. It does not manufacture chapter text. It must be run after
-catalogue content updates (or call `POST /ai/books/:bookId/index` from Developer
-2's post-write integration). Inventory-only updates do not require reembedding.
+catalogue content updates, or call the ADMIN endpoint
+`POST /ai/books/:bookId/index` for a changed book. Inventory-only updates do not
+require reembedding.
 Until reindexed, stale catalogue chunks are excluded using content fingerprints.
-Chunks for deleted books are ignored at hydration time; maintenance may delete
-those orphans later. No hooks mutate the Book owner's model.
+Deleting a book through the shared API removes its chunks in the same
+transaction. Retrieval also excludes missing books, so historical orphan chunks
+cannot produce book cards. Source writes coordinate with catalogue mutations
+and reject metadata changes during embedding generation with a retryable 409.
 
 Licensed excerpts can be uploaded by ADMIN through:
 
@@ -142,7 +144,9 @@ live model. Browser tests mock only API responses and cover desktop/mobile
 interaction, source/book links, availability, error/retry, loading/cancellation,
 follow-ups, learning paths, cold start and untrusted text rendering.
 
-The CI workflow runs the same backend tests, frontend build and browser suite.
+The CI workflow runs all backend tests, the frontend build, UI regressions, and
+a real browser/API integration scenario. See the [integration runbook](integration.md)
+for the full suite and its provider-test boundary.
 The shared Postman collection has an AI folder with success and failure cases.
 Use `userToken`/`adminToken`, a real `bookId`, and valid AI configuration. Missing
 context may legitimately return `insufficientContext=true`.
