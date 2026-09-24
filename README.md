@@ -19,7 +19,12 @@ Book reads and category reads require the shared JWT contract (`token` cookie or
 - `PATCH /api/v1/books/:id` (ADMIN; includes inventory updates)
 - `DELETE /api/v1/books/:id` (ADMIN; returns 409 when active borrows/reservations reference the book)
 - `GET /api/v1/categories`
+- `POST /api/v1/borrow/:bookId`, `GET /api/v1/borrow/my`, `PATCH /api/v1/borrow/:id/return`, `PATCH /api/v1/borrow/:id/renew`
+- `POST /api/v1/reservations/:bookId`, `GET /api/v1/reservations/my`, `DELETE /api/v1/reservations/:id`
+- `GET /api/v1/fines/my`, `GET /api/v1/notifications`, `PATCH /api/v1/notifications/:id/read`
 
 Success and error bodies follow the shared `{ success, message, data/errors }` response shape. Books are stored once; other modules reference the MongoDB `_id` as `bookId`/`book`.
 
-Postman collection: [`postman/LibraMind.postman_collection.json`](./postman/LibraMind.postman_collection.json). Set its `token` to a JWT whose claims contain `id`/`sub` and `role`.
+Circulation defaults are a 14 day loan, two renewals, a three day reservation pickup window, and a fine of 1 currency unit per overdue day. Configure `LOAN_DAYS`, `MAX_RENEWALS`, `RESERVATION_HOLD_DAYS`, and `FINE_PER_DAY` to change those values.
+
+Postman collection: [`postman/LibraMind.postman_collection.json`](./postman/LibraMind.postman_collection.json). Set `token` and `userToken` to a JWT whose claims contain `id`/`sub` and `role`, plus `bookId` for a book to exercise the circulation flow. Each circulation request includes a Postman test script. Inventory updates use atomic book increments/decrements and rollback when a loan cannot be created; multi-document transactions are not required by this module.

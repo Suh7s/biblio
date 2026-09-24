@@ -67,7 +67,7 @@ export async function deleteBook(req, res) {
   const db = mongoose.connection.db;
   for (const name of ['borrows', 'reservations']) {
     const collection = db.collection(name);
-    if (await collection.countDocuments({ book: book._id, ...(name === 'borrows' ? { status: { $in: ['BORROWED', 'OVERDUE'] } } : { status: { $in: ['ACTIVE', 'WAITING', 'PENDING'] } }) })) {
+    if (await collection.countDocuments({ book: book._id, ...(name === 'borrows' ? { status: { $in: ['BORROWED', 'OVERDUE'] } } : { status: { $in: ['ACTIVE', 'WAITING', 'PENDING', 'READY'] } }) })) {
       return res.status(409).json({ success: false, message: 'This book has active borrowings or reservations and cannot be deleted.' });
     }
   }
