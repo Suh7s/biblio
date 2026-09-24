@@ -154,7 +154,7 @@ Question → embedding → relevant BookChunks → source selection
 
 ### Index your library
 
-Add books and configure `OPENAI_API_KEY` first. Then choose the indexing steps for your environment:
+Add books and configure `OPENAI_API_KEY` first. In **Admin → Manage books**, choose **Index for AI** on each new or changed title to make its catalogue description available to search and reading guidance. For a bulk reindex, or to create the Atlas vector index, use the commands below:
 
 ```sh
 # Atlas mode only — create the vector search index
