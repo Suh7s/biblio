@@ -60,7 +60,7 @@ Check their dimensions/filter fields manually when configuration changes.
 `ai:index` embeds real title/author/category/tag/description content and skips
 unchanged records. It does not manufacture chapter text. It must be run after
 catalogue content updates, or call the ADMIN endpoint
-`POST /ai/books/:bookId/index` for a changed book. Inventory-only updates do not
+`POST /ai/books/:bookId/index` for a changed book, or use **Index for AI** beside the title in Admin → Manage books. Inventory-only updates do not
 require reembedding.
 Until reindexed, stale catalogue chunks are excluded using content fingerprints.
 Deleting a book through the shared API removes its chunks in the same

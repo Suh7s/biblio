@@ -33,9 +33,16 @@ export function createAiService({
     const seen = new Set();
     let budget = 18000;
     const context = [];
-    for (const chunk of [...candidates].sort(
-      (a, b) => b.relevance - a.relevance,
-    )) {
+    for (const chunk of [...candidates].sort((a, b) => {
+      const relevance = b.relevance - a.relevance;
+      if (relevance) return relevance;
+      // When semantic scores tie, an authored passage supports a more useful
+      // citation than the book's short catalogue description.
+      const excerptPriority =
+        Number(b.metadata.sourceType === "excerpt") -
+        Number(a.metadata.sourceType === "excerpt");
+      return excerptPriority;
+    })) {
       const book = lookup.get(String(chunk.book));
       if (
         !book ||

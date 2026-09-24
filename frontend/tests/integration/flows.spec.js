@@ -16,6 +16,7 @@ test('real browser + API: auth, CRUD, circulation, queue pickup, sources and adm
   await admin.getByRole('button', { name: /Add to catalogue/ }).click(); await expect(admin.getByText('Book added to the catalogue.')).toBeVisible();
   await admin.getByRole('button', { name: 'Edit Browser Robotics Resource' }).click(); await admin.getByLabel('Shelf location', { exact: true }).fill('R-1'); await admin.getByRole('button', { name: /Save changes/ }).click(); await expect(admin.getByText('Book updated.')).toBeVisible();
   const books = await (await admin.request.get(base + '/books')).json(); const book = books.data.books[0];
+  await admin.getByRole('button', { name: `Index ${book.title} for biblio AI` }).click(); await expect(admin.getByRole('status')).toContainText(`${book.title} is ready for biblio AI.`);
   const indexed = await admin.request.put(`${base}/ai/books/${book._id}/chunks`, { data: { sourceId: 'browser-notes', sections: [{ chapter: 'Chapter 1', section: 'Frames', content: sourceText }] } }); expect(indexed.status()).toBe(200);
   const context = await browser.newContext(); const reader = await context.newPage(); reader.on('pageerror', e => errors.push(e.message));
   await register(reader, 'browser-reader@integration.test');

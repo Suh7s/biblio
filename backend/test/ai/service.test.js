@@ -112,6 +112,23 @@ test("RAG returns only validated quotes, source attribution and refreshed metada
     ["S1"],
   );
 });
+test("RAG favors a chapter excerpt over a catalogue description when scores tie", async () => {
+  const description = {
+    ...catalogueChunk,
+    _id: "555555555555555555555555",
+    content: "Robotics catalogue description covering the same topic.",
+    metadata: { ...catalogueChunk.metadata, contentHash: "distinct-description-hash" },
+  };
+  const { service, calls } = harness({
+    vectorStore: {
+      async search() { return [description, chunk()]; },
+      async currentIds(ids) { return ids; },
+    },
+  });
+  await service.ask(ask);
+  assert.equal(calls.select[0].input.libraryContext[0].sourceType, "excerpt");
+  assert.equal(calls.select[0].input.libraryContext[0].chapter, "Chapter 2");
+});
 test("unknown sources, invented excerpts, extra claims and conflicting abstention fail closed", () => {
   const context = [{ ...chunk(), id: "S1", book }];
   for (const raw of [
