@@ -37,6 +37,19 @@ const success = (data) => ({
   contentType: "application/json",
   body: JSON.stringify({ success: true, message: "Completed.", data }),
 });
+test.beforeEach(async ({ page }) => {
+  await page.route("**/api/v1/auth/me", (route) =>
+    route.fulfill(success({
+      user: {
+        _id: "aaaaaaaaaaaaaaaaaaaaaaaa",
+        name: "Test Reader",
+        email: "reader@example.edu",
+        role: "USER",
+        interests: [],
+      },
+    })),
+  );
+});
 async function noOverflow(page) {
   const width = page.viewportSize().width;
   expect(
