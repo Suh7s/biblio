@@ -51,13 +51,13 @@ function AuthForm({ mode }) {
     } catch (err) { setError(err.response?.data?.message || 'Unable to sign in. Please try again.'); }
     finally { setBusy(false); }
   }
-  return <main className="page auth-page"><section className="auth-card"><div className="eyebrow">LIBRAMIND · UNIVERSITY LIBRARY</div><h1>{isRegister ? 'Create your account' : 'Welcome back'}</h1><p>{isRegister ? 'Join the community and start building your reading history.' : 'Sign in to continue to your library.'}</p><form onSubmit={submit}>
+  return <main className="page auth-page auth-entry"><aside className="auth-story"><span className="eyebrow">A LITTLE CURIOSITY GOES A LONG WAY</span><h2>Come for a book.<br/><em>Leave with an idea.</em></h2><p>Your collection, your reading journey, and a little help finding what comes next.</p><img src="/reading-room.svg" alt=""/><div className="auth-story-foot"><span>DISCOVER · BORROW · GROW</span><span>b.</span></div></aside><section className="auth-card"><div className="eyebrow">BIBLIO · UNIVERSITY LIBRARY</div><h1>{isRegister ? 'Create your account' : 'Welcome back'}</h1><p>{isRegister ? 'Join the community and start building your reading history.' : 'Sign in to continue to your library.'}</p><form onSubmit={submit}>
     {isRegister && <label>Name<input name="name" autoComplete="name" minLength="2" required/></label>}
     <label>Email<input name="email" type="email" autoComplete="email" required/></label>
     <label>Password<input name="password" type="password" autoComplete={isRegister ? 'new-password' : 'current-password'} minLength={isRegister ? 8 : 1} required/></label>
     {error && <div className="auth-error" role="alert">{error}</div>}
     <button className="auth-submit" disabled={busy}>{busy ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in'}</button>
-  </form><div className="auth-switch">{isRegister ? 'Already have an account?' : 'New to LibraMind?'} <Link to={isRegister ? '/login' : '/register'}>{isRegister ? 'Sign in' : 'Create an account'}</Link></div></section></main>;
+  </form><div className="auth-switch">{isRegister ? 'Already have an account?' : 'New to biblio?'} <Link to={isRegister ? '/login' : '/register'}>{isRegister ? 'Sign in' : 'Create an account'}</Link></div></section></main>;
 }
 export function LoginPage() { return <AuthForm mode="login"/>; }
 export function RegisterPage() { return <AuthForm mode="register"/>; }

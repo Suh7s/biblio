@@ -1,12 +1,14 @@
-# LibraMind
+# biblio
+
+<p align="center"><img src="docs/assets/biblio-banner.svg" alt="biblio — A home for curious minds" width="100%" /></p>
 
 **A university library platform for finding, borrowing, and learning from the resources already in your library.**
 
 [![Integration checks](https://github.com/Suh7s/biblio/actions/workflows/ai.yml/badge.svg?branch=main)](https://github.com/Suh7s/biblio/actions/workflows/ai.yml)
 
-LibraMind brings catalogue search, borrowing, reservations, saved reading lists, and library analytics into one application. Its AI assistant, **LibraAI**, retrieves real library resources to explain search results, suggest reading directions, and build learning paths with source citations.
+biblio brings catalogue search, borrowing, reservations, saved reading lists, and library analytics into one application. Its AI assistant, **biblio AI**, retrieves real library resources to explain search results, suggest reading directions, and build learning paths with source citations.
 
-[Get started](#get-started) · [LibraAI](#libraai) · [API](#api-overview) · [Testing](#testing) · [Documentation](#documentation)
+[Get started](#get-started) · [biblio AI](#biblio-ai) · [API](#api-overview) · [Testing](#testing) · [Documentation](#documentation)
 
 ## What you can do
 
@@ -15,7 +17,7 @@ LibraMind brings catalogue search, borrowing, reservations, saved reading lists,
 | **Discover** | Browse and search the catalogue, filter by category and availability, view book details, and save resources for later. |
 | **Borrow** | Borrow, return, and renew books; see current loans, reading history, due dates, and overdue fines. |
 | **Reserve** | Join the queue for an unavailable title, receive an in-app pickup notification, and collect a reserved copy. |
-| **Learn with LibraAI** | Search by meaning, ask library questions, inspect cited excerpts, and create learning paths using actual Book IDs. |
+| **Learn with biblio AI** | Search by meaning, ask library questions, inspect cited excerpts, and create learning paths using actual Book IDs. |
 | **Get recommendations** | Discover resources using interests, saved books, borrowing history, recent searches, and semantic similarity. |
 | **Administer** | Create and edit catalogue records, manage inventory, and view users, borrowings, reservations, and analytics through admin APIs. |
 
@@ -37,7 +39,7 @@ The interface includes protected reader and admin pages, responsive layouts, and
 flowchart LR
     Web["React + Vite"] <-->|"REST /api/v1"| API["Express API"]
     API <--> DB[("MongoDB replica set / Atlas")]
-    API <--> AI["LibraAI services"]
+    API <--> AI["biblio AI services"]
     AI <--> DB
     AI <--> Provider["Embedding + LLM provider"]
 ```
@@ -72,9 +74,11 @@ cp frontend/.env.example frontend/.env
 
 Edit `backend/.env` before starting the API:
 
+Upgrading an existing installation? Keep your existing `MONGODB_URI`, database, and Docker volume. The biblio rebrand does not require a data migration.
+
 | Variable | Local setup |
 | --- | --- |
-| `MONGODB_URI` | Your Atlas connection string, or `mongodb://127.0.0.1:27017/libramind?replicaSet=rs0` for the local setup below. |
+| `MONGODB_URI` | Your Atlas connection string, or `mongodb://127.0.0.1:27017/biblio?replicaSet=rs0` for the local setup below. |
 | `JWT_SECRET` | Replace the placeholder with a unique random secret of at least 32 characters. |
 | `CLIENT_ORIGIN` | `http://localhost:5173` |
 | `PORT` | `5000` |
@@ -91,16 +95,16 @@ The frontend example sets `VITE_API_URL=http://localhost:5000/api/v1`. Keep brow
 If you are using Atlas, skip this step. With Docker running, create a local database:
 
 ```sh
-docker run --name libramind-mongo -p 127.0.0.1:27017:27017 -v libramind-mongo-data:/data/db -d mongo:7 --replSet rs0 --bind_ip_all
+docker run --name biblio-mongo -p 127.0.0.1:27017:27017 -v biblio-mongo-data:/data/db -d mongo:7 --replSet rs0 --bind_ip_all
 ```
 
 Once MongoDB is accepting connections, initialize the replica set:
 
 ```sh
-docker exec libramind-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+docker exec biblio-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 ```
 
-This initialization is needed only once. For subsequent sessions, use `docker start libramind-mongo`.
+This initialization is needed only once. For subsequent sessions, use `docker start biblio-mongo`.
 
 </details>
 
@@ -130,13 +134,13 @@ npm run admin:grant --prefix backend -- admin@example.edu
 
 Use the registered email, then sign in again. Open `/admin/books` to add real library resources. A fresh database starts with an empty catalogue; the application does not seed invented books or AI answers.
 
-## LibraAI
+## biblio AI
 
 Try a question such as:
 
 > “I know Python and calculus. What should I read to learn how robots perceive and navigate?”
 
-LibraAI uses the library's descriptions and indexed excerpts to retrieve relevant resources. The LLM selects sources and verbatim excerpts; the server validates those selections and builds the answer from current catalogue records.
+biblio AI uses the library's descriptions and indexed excerpts to retrieve relevant resources. The LLM selects sources and verbatim excerpts; the server validates those selections and builds the answer from current catalogue records.
 
 ```text
 Question → embedding → relevant BookChunks → source selection
@@ -191,14 +195,14 @@ All endpoints use the `/api/v1` prefix.
 | Borrowing | `POST /borrow/:bookId`, `GET /borrow/my`, `PATCH /borrow/:id/return`, `PATCH /borrow/:id/renew` |
 | Reservations | `POST /reservations/:bookId`, `GET /reservations/my`, `DELETE /reservations/:id` |
 | Fines and notifications | `GET /fines/my`, `GET /notifications`, `PATCH /notifications/:id/read` |
-| LibraAI | `GET /ai/search?q=`, `POST /ai/ask`, `POST /ai/learning-path`, `GET /ai/recommendations` |
+| biblio AI | `GET /ai/search?q=`, `POST /ai/ask`, `POST /ai/learning-path`, `GET /ai/recommendations` |
 | Administration | `GET /admin/dashboard`, `/admin/users`, `/admin/borrowings`, `/admin/reservations`, `/admin/analytics` |
 
 Success responses use `{ "success": true, "message": "...", "data": {} }`. Errors use `{ "success": false, "message": "...", "errors": {} }`. Missing or invalid authentication returns **401**; insufficient permissions return **403**; circulation conflicts return **409**.
 
 Login sets an HTTP-only cookie. Roles are read from the current user record, and logout revokes all sessions for that account. Bearer tokens from real login responses are also supported for API clients.
 
-Use the [Postman endpoint collection](postman/LibraMind.postman_collection.json) for request bodies, query parameters, source management, and failure cases.
+Use the [Postman endpoint collection](postman/biblio.postman_collection.json) for request bodies, query parameters, source management, and failure cases.
 
 ## Testing
 
@@ -226,7 +230,7 @@ The [integration audit](docs/integration.md) records **52 backend tests, 22 UI r
 
 ### Postman walkthrough
 
-Import the [ordered integration collection](postman/LibraMind.integration.postman_collection.json), set its admin credentials and test-user passwords, and run against a disposable library:
+Import the [ordered integration collection](postman/biblio.integration.postman_collection.json), set its admin credentials and test-user passwords, and run against a disposable library:
 
 1. **Core flows:** registration/login/logout, book CRUD, borrowing/returning, role checks, reservation handoff, and admin views.
 2. **AI flows:** source import, semantic search, a cited answer, a learning path, and recommendations. Requires configured AI or the isolated test fixture.
@@ -260,6 +264,10 @@ architecture.md       Shared architecture and ownership conventions
 - Before using an existing database, run `npm run audit:data --prefix backend` to inspect inventory inconsistencies, duplicate active records, queue gaps, and missing book references. The audit is read-only.
 - Production needs HTTPS, an exact `CLIENT_ORIGIN`, and a same-site frontend/API configuration. Rate-limit counters are currently in-process; scaling needs a shared store.
 - Notifications are in-app. Password recovery, email verification, email/push delivery, fine settlement, and staff workflows for editing user/loan records remain future work. The admin book list currently shows up to 100 records.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local checks, code boundaries, and pull request guidance. GitHub provides focused [bug report](.github/ISSUE_TEMPLATE/bug_report.yml), [feature request](.github/ISSUE_TEMPLATE/feature_request.yml), and pull request templates.
 
 ## Documentation
 

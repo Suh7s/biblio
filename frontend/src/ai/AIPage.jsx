@@ -10,7 +10,7 @@ import "./ai.css";
 const modes = [
   {
     id: "chat",
-    label: "Ask LibraAI",
+    label: "Ask biblio AI",
     icon: "spark",
     note: "A conversation with your library",
   },
@@ -44,7 +44,7 @@ export default function AIPage() {
             <Icon size={23} />
           </span>
           <span>
-            LibraAI<small>YOUR KNOWLEDGE COMPANION</small>
+            biblio AI<small>YOUR KNOWLEDGE COMPANION</small>
           </span>
         </Link>
         <div className="ai-sidebar-caption">SPACE TO EXPLORE</div>
@@ -85,7 +85,7 @@ export default function AIPage() {
       <div className="ai-main">
         <header className="ai-workspace-header">
           <div>
-            <span className="ai-overline">DISCOVER / LIBRAAI</span>
+            <span className="ai-overline">DISCOVER / BIBLIO AI</span>
             <h1>{mode.label}</h1>
           </div>
           <span className="ai-context-label">
@@ -108,7 +108,7 @@ export default function AIPage() {
         </div>
         <div className="ai-workspace-foot">
           <span>Curiosity, with a source.</span>
-          <span>LIBRAMIND / DISCOVER KNOWLEDGE</span>
+          <span>BIBLIO / DISCOVER KNOWLEDGE</span>
         </div>
       </div>
     </main>

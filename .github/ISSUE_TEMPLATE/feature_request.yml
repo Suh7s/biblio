@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest an improvement to the library experience.
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What should be easier?
+      description: Describe the reader, librarian, or administrator need.
+      placeholder: The problem you want to solve.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to happen?
+      description: Describe a possible solution, if you have one.
+      placeholder: The behavior that would help.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Other approaches considered
+      placeholder: Any alternatives or context.

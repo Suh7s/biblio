@@ -50,7 +50,7 @@ export function SavedBooks() {
     catch (e) { setMessage(e.response?.data?.message || 'Could not remove this saved book.'); }
     finally { setBusy(false); }
   }
-  return <main className="page circ-page"><div className="circ-title"><div><div className="circ-kicker">YOUR READING LIST</div><h1>Saved books</h1><p>Keep resources for later and shape your LibraAI recommendations.</p></div></div>
+  return <main className="page circ-page"><div className="circ-title"><div><div className="circ-kicker">YOUR READING LIST</div><h1>Saved books</h1><p>Keep resources for later and shape your biblio AI recommendations.</p></div></div>
     {message && <Message text={message} error/>}<State loading={state.loading} error={state.error}/>
     {!state.loading && !state.error && (state.items.length ? <section className="circ-section">{state.items.map(item => <article className="reservation-row" key={item._id}><BookTitle book={item.book}/>{item.book && <button disabled={busy} onClick={() => remove(item.book._id)}>Remove saved book</button>}</article>)}</section> : <Empty>No saved books yet. Save resources from their <Link to="/books">book details page</Link>.</Empty>)}
     {state.pagination?.pages > 1 && <nav className="pagination" aria-label="Saved books pages"><button disabled={page <= 1 || state.loading} onClick={() => setPage(page - 1)}>Previous page</button><span>Page {page} of {state.pagination.pages}</span><button disabled={page >= state.pagination.pages || state.loading} onClick={() => setPage(page + 1)}>Next page</button></nav>}

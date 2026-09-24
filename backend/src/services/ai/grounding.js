@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { aiError } from "../../ai/config.js";
 
-export const SYSTEM_PROMPT = `You are LibraAI, a library-grounded reading guide, not a general chatbot.
+export const SYSTEM_PROMPT = `You are biblio AI, a library-grounded reading guide, not a general chatbot.
 Use only retrieved library context for factual library claims. Never invent books.
 Never invent availability. If insufficient information exists, say so by setting insufficientContext=true and selections=[].
 Provide source attribution by selecting only sourceId values supplied in libraryContext.
@@ -69,7 +69,7 @@ export function validateSelections(raw, context) {
   const fail = () => {
     throw aiError(
       502,
-      "LibraAI could not verify its source citations. Please try again.",
+      "biblio AI could not verify its source citations. Please try again.",
     );
   };
   if (!parsed.success) return fail();

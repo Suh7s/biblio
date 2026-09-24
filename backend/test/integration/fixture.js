@@ -17,7 +17,7 @@ export const excerpt = 'Coordinate frames describe position and orientation. Sen
 export const bookInput = { title: 'Integration Robotics Resource', authors: ['Integration Author'], isbn: 'INTEGRATION-001', category: 'Engineering', description: excerpt, totalCopies: 1, availableCopies: 1 };
 export async function startFixture(port = 0) {
   process.env.JWT_SECRET = 'isolated-integration-test-secret-not-for-deployment';
-  const mongo = await MongoMemoryReplSet.create({ binary: { downloadDir: join(tmpdir(), 'libramind-mongodb-binaries') }, replSet: { count: 1 } });
+  const mongo = await MongoMemoryReplSet.create({ binary: { downloadDir: join(tmpdir(), 'biblio-mongodb-binaries') }, replSet: { count: 1 } });
   await mongoose.connect(mongo.getUri());
   await Promise.all(Object.values(mongoose.models).map(model => model.init()));
   const control = { calls: [], invalidSelection: false };

@@ -1,9 +1,9 @@
-name: LibraMind integration
+name: biblio checks
 on:
   push:
     branches: [feature/ai, main]
   pull_request:
-    paths: ['backend/**', 'frontend/**', '.github/workflows/ai.yml']
+    paths: ['backend/**', 'frontend/**', 'docs/**', 'README.md', 'CONTRIBUTING.md', '.github/**', '.github/workflows/ai.yml']
 jobs:
   verify:
     runs-on: ubuntu-latest
