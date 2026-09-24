@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "LIBRAMIND API",
-    "description": "Shared LibraMind API collection for Authentication, Books, Borrowing, Reservations, Fines, Notifications, AI, and Admin. Authentication requests are integration contracts; AI requires configured embeddings and indexed library resources.",
+    "description": "LibraMind API. Authentication requests use the HTTP-only token cookie, retained by Postman. Other folders include Books, Borrowing, Admin, and AI.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -439,7 +439,7 @@
       "name": "Borrowing",
       "item": [
         {
-          "name": "Borrow book \u2014 success",
+          "name": "Borrow book — success",
           "request": {
             "method": "POST",
             "header": [],
@@ -472,7 +472,7 @@
           ]
         },
         {
-          "name": "Borrow duplicate \u2014 expected 409",
+          "name": "Borrow duplicate — expected 409",
           "request": {
             "method": "POST",
             "header": [],
@@ -533,7 +533,7 @@
           ]
         },
         {
-          "name": "Renew loan \u2014 success",
+          "name": "Renew loan — success",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -564,7 +564,7 @@
           ]
         },
         {
-          "name": "Return loan \u2014 success",
+          "name": "Return loan — success",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -600,7 +600,7 @@
       "name": "Reservations",
       "item": [
         {
-          "name": "Reserve unavailable book \u2014 success",
+          "name": "Reserve unavailable book — success",
           "request": {
             "method": "POST",
             "header": [],
@@ -664,7 +664,7 @@
           ]
         },
         {
-          "name": "Cancel reservation \u2014 success",
+          "name": "Cancel reservation — success",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -805,7 +805,7 @@
       "name": "AI",
       "item": [
         {
-          "name": "Semantic search \u2014 concept query",
+          "name": "Semantic search — concept query",
           "request": {
             "method": "GET",
             "header": [],
@@ -910,7 +910,7 @@
           "response": []
         },
         {
-          "name": "Learning path \u2014 8 weeks",
+          "name": "Learning path — 8 weeks",
           "request": {
             "method": "POST",
             "header": [
@@ -982,7 +982,7 @@
           "response": []
         },
         {
-          "name": "Index catalogue source \u2014 ADMIN",
+          "name": "Index catalogue source — ADMIN",
           "request": {
             "method": "POST",
             "header": [],
@@ -1013,7 +1013,7 @@
           "response": []
         },
         {
-          "name": "Index actual excerpt \u2014 ADMIN (replace content before use)",
+          "name": "Index actual excerpt — ADMIN (replace content before use)",
           "request": {
             "method": "PUT",
             "header": [
@@ -1053,7 +1053,7 @@
           "response": []
         },
         {
-          "name": "Delete source \u2014 ADMIN",
+          "name": "Delete source — ADMIN",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1084,7 +1084,7 @@
           "response": []
         },
         {
-          "name": "Missing authentication \u2014 clear Postman cookies first",
+          "name": "Missing authentication — clear Postman cookies first",
           "request": {
             "method": "GET",
             "header": [],
@@ -1487,6 +1487,122 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ada Reader\",\n  \"email\": \"ada.reader@example.edu\",\n  \"password\": \"Reading123!\",\n  \"interests\": [\n    \"robotics\",\n    \"history\"\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ada.reader@example.edu\",\n  \"password\": \"Reading123!\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/logout",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ada Lovelace\",\n  \"interests\": [\n    \"robotics\",\n    \"AI\"\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/users/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/me/history",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
         }
       ]
     }
