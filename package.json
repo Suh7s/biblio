@@ -1,0 +1,8 @@
+{
+  "name": "libramind-books",
+  "private": true,
+  "scripts": {
+    "dev:api": "npm --prefix backend run dev",
+    "dev:web": "npm --prefix frontend run dev"
+  }
+}
