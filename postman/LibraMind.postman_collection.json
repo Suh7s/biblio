@@ -1,0 +1,33 @@
+{
+  "info": {
+    "name": "LIBRAMIND API",
+    "description": "Books and catalogue requests. Set baseUrl and token (a JWT for a USER or ADMIN) in the collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "bookId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Books",
+      "item": [
+        { "name": "Browse books (USER or ADMIN)", "request": { "method": "GET", "header": [], "url": { "raw": "{{baseUrl}}/books?page=1&limit=12&search=robotics&category=Engineering&sort=-year", "host": ["{{baseUrl}}"], "path": ["books"], "query": [{"key":"page","value":"1"},{"key":"limit","value":"12"},{"key":"search","value":"robotics"},{"key":"category","value":"Engineering"},{"key":"sort","value":"-year"}] }, "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] },
+        { "name": "Browse without token (401 failure case)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/books", "auth": { "type": "noauth" } }, "response": [] },
+        { "name": "Get book details", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/books/{{bookId}}", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] },
+        { "name": "Create book (ADMIN)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"title\": \"Modern Robotics\",\n  \"authors\": [\"Kevin M. Lynch\", \"Frank C. Park\"],\n  \"isbn\": \"9781107156302\",\n  \"description\": \"A comprehensive introduction to robotics.\",\n  \"category\": \"Engineering\",\n  \"tags\": [\"robotics\", \"control\"],\n  \"publisher\": \"Cambridge University Press\",\n  \"publicationYear\": 2017,\n  \"totalCopies\": 4,\n  \"availableCopies\": 4,\n  \"shelfLocation\": \"ENG-ROB-001\",\n  \"coverImage\": \"\"\n}" }, "url": "{{baseUrl}}/books", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) {", "  const body = pm.response.json();", "  if (body.data?.book?._id) pm.collectionVariables.set('bookId', body.data.book._id);", "}"] } }], "response": [] },
+        { "name": "Create book as USER (403 failure case)", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"title\":\"Forbidden test\",\"authors\":[\"Test\"],\"isbn\":\"TEST-403\",\"category\":\"Test\",\"totalCopies\":1,\"availableCopies\":1}" }, "url": "{{baseUrl}}/books", "auth": { "type": "bearer", "bearer": [{ "key": "userToken", "value": "{{token}}", "type": "string" }] } }, "response": [] },
+        { "name": "Update book / inventory (ADMIN)", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"totalCopies\": 5,\n  \"availableCopies\": 5,\n  \"shelfLocation\": \"ENG-ROB-002\"\n}" }, "url": "{{baseUrl}}/books/{{bookId}}", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] },
+        { "name": "Reject invalid inventory (400 failure case)", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"totalCopies\":1,\"availableCopies\":2}" }, "url": "{{baseUrl}}/books/{{bookId}}", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] },
+        { "name": "Delete book (ADMIN; 409 if active circulation)", "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/books/{{bookId}}", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        { "name": "List categories (USER or ADMIN)", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/categories", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] } }, "response": [] }
+      ]
+    }
+  ]
+}
