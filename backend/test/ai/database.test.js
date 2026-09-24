@@ -38,7 +38,7 @@ const vectorStore = createVectorStore(config);
 before(
   async () => {
     mongo = await MongoMemoryReplSet.create({
-      binary: { downloadDir: join(tmpdir(), "libramind-mongodb-binaries") },
+      binary: { downloadDir: join(tmpdir(), "biblio-mongodb-binaries") },
       replSet: { count: 1 },
     });
     await mongoose.connect(mongo.getUri());

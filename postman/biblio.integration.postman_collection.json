@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "LibraMind \u2014 Integration sequence",
+    "name": "biblio \u2014 Integration sequence",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "description": "Run against a disposable/local library. Set admin credentials for an existing ADMIN and userPassword/queueUserPassword (8\u201372 UTF-8 bytes). Uses real login cookies only. Core runs without an AI key. AI folder requires OpenAI plus indexed vector search, or the isolated integration fixture. Run Cleanup last. Creates two test users; no production accounts are deleted automatically."
   },
@@ -1434,7 +1434,7 @@
           ]
         },
         {
-          "name": "Ask grounded LibraAI",
+          "name": "Ask grounded biblio AI",
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/ai/ask",

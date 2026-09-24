@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" fill="none">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1484" y2="581" gradientUnits="userSpaceOnUse"><stop stop-color="#214E42"/><stop offset="1" stop-color="#315F4D"/></linearGradient><linearGradient id="leaf" x1="1265" y1="25" x2="1510" y2="520" gradientUnits="userSpaceOnUse"><stop stop-color="#99AE83"/><stop offset="1" stop-color="#668365"/></linearGradient></defs>
+<rect width="1600" height="520" rx="24" fill="#F8F7F2"/><rect width="1600" height="520" rx="24" fill="url(#bg)"/>
+<circle cx="1289" cy="259" r="241" stroke="#B2C4A1" stroke-opacity=".17"/><circle cx="1289" cy="259" r="192" stroke="#B2C4A1" stroke-opacity=".25" stroke-dasharray="3 11"/><path d="M1082 430c-58-105-29-263 71-365m126 459c148-73 199-244 136-376" stroke="#C8D4B3" stroke-opacity=".32"/>
+<text x="128" y="182" fill="#F8F5E9" font-family="Georgia,serif" font-size="105" font-weight="600" letter-spacing="-6">biblio<tspan fill="#E5B687">.</tspan></text>
+<text x="135" y="248" fill="#E0EBDD" font-family="Arial,sans-serif" font-size="25" letter-spacing="5">A HOME FOR CURIOUS MINDS</text>
+<path d="M135 287h77" stroke="#DDB27D" stroke-width="3"/>
+<text x="135" y="337" fill="#F1EFE4" font-family="Arial,sans-serif" font-size="22">Find a book. Follow an idea.</text>
+<text x="135" y="381" fill="#DAE5D6" font-family="Arial,sans-serif" font-size="16">Your library, thoughtfully connected — with grounded AI.</text>
+<!-- Original decorative reading-room illustration, with no represented catalogue titles. -->
+<ellipse cx="1291" cy="452" rx="183" ry="16" fill="#122E27" fill-opacity=".24"/>
+<circle cx="1284" cy="245" r="147" fill="#F3F0DF" fill-opacity=".07"/>
+<g transform="rotate(-9 1286 274)"><rect x="1160" y="108" width="174" height="247" rx="8" fill="#173E34" stroke="#ADC19E" stroke-opacity=".6" stroke-width="2"/><rect x="1174" y="122" width="146" height="219" rx="3" stroke="#D8DCC2" stroke-opacity=".66"/><path d="M1187 149h119M1211 161h71" stroke="#E0E5CB" stroke-opacity=".65"/><circle cx="1247" cy="239" r="35" stroke="#E0E5CB" stroke-width="2"/><path d="M1222 247c12-18 28-28 49-33-2 29-19 48-45 38m0 0 34-28" stroke="#E0E5CB" stroke-width="2"/><path d="M1225 310h44m-32 10h21" stroke="#E0E5CB" stroke-opacity=".7" stroke-width="2"/></g>
+<g transform="rotate(11 1327 371)"><path d="M1247 337c28-7 51 0 69 15 23-11 48-11 75-3l-19 72c-24-7-42-7-65 5-19-15-39-20-70-13Z" fill="#FCF7E9"/><path d="m1316 352-9 74m-46-64c16-1 29 3 42 13m-44-1c16-1 29 3 42 13m25-19c16-8 33-10 50-6m-53 18c16-8 33-10 50-6" stroke="#C3B99F" stroke-width="2"/></g>
+<path d="M1430 104c-30 10-45 32-41 62 24-11 38-30 41-62Zm-40 65c-27 4-44 18-51 44 28-4 45-18 51-44Zm-1-65c4 27 18 44 44 50-3-28-18-44-44-50Z" fill="url(#leaf)"/><path d="M1415 100c-6 40-19 73-45 110" stroke="#B5C49F" stroke-width="2"/>
+<path d="m1422 352 5 13 14 5-14 5-5 14-5-14-13-5 13-5Z" fill="#E4B486"/><circle cx="1122" cy="164" r="5" fill="#E3B789"/><circle cx="1449" cy="264" r="4" fill="#D8E1CB"/>
+<text x="128" y="469" fill="#CAD6C5" font-family="monospace" font-size="12" letter-spacing="3">DISCOVER  ·  BORROW  ·  LEARN</text>
+</svg>

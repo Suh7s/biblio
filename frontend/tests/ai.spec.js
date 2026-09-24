@@ -63,7 +63,7 @@ test("assistant welcome is accessible and fits desktop/mobile with no invented b
 }) => {
   await page.goto("/ai");
   await expect(
-    page.getByRole("heading", { name: "Ask LibraAI", exact: true }),
+    page.getByRole("heading", { name: "Ask biblio AI", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Send question" }),
@@ -106,20 +106,20 @@ test("follow-up sends only book IDs and keeps previous conversation after tool n
   });
   await page.goto("/ai");
   await page
-    .getByLabel("Ask LibraAI", { exact: true })
+    .getByLabel("Ask biblio AI", { exact: true })
     .fill("Help me learn robotics");
   await page.getByRole("button", { name: "Send question" }).click();
   await expect(page.locator(".ai-answer")).toHaveCount(1);
   await page
     .getByRole("button", { name: "Learning path", exact: true })
     .click();
-  await page.getByRole("button", { name: "Ask LibraAI", exact: true }).click();
+  await page.getByRole("button", { name: "Ask biblio AI", exact: true }).click();
   await expect(page.locator(".ai-answer")).toHaveCount(1);
   await page
     .getByLabel("Focus this question on the previous answer’s books")
     .check();
   await page
-    .getByLabel("Ask LibraAI", { exact: true })
+    .getByLabel("Ask biblio AI", { exact: true })
     .fill("Which concepts should I read first?");
   await page.getByRole("button", { name: "Send question" }).click();
   await expect(page.locator(".ai-answer")).toHaveCount(2);

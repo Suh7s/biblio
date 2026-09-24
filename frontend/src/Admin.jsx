@@ -19,7 +19,7 @@ function useAdminData(path, params) {
 }
 function AdminShell({ children, title, description }) {
   return <main className="page admin-console"><div className="breadcrumb">LIBRARY TOOLS <span>/</span> ADMINISTRATION</div>
-    <div className="admin-title"><div><div className="eyebrow">LIBRAMIND ADMIN</div><h1>{title}</h1><p>{description}</p></div><Link className="admin-book-link" to="/admin/books">Manage books <span>↗</span></Link></div>
+    <div className="admin-title"><div><div className="eyebrow">BIBLIO ADMIN</div><h1>{title}</h1><p>{description}</p></div><Link className="admin-book-link" to="/admin/books">Manage books <span>↗</span></Link></div>
     <nav className="admin-nav">{links.map(([to, label]) => <NavLink end={to === '/admin'} key={to} to={to}>{label}</NavLink>)}<Link to="/admin/books">Book management ↗</Link></nav>{children}
   </main>;
 }

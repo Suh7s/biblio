@@ -22,6 +22,6 @@ export function errorMessage(error) {
     return "You’ve made several requests. Wait a minute, then try again.";
   return (
     error.response?.data?.message ||
-    "We couldn’t reach LibraAI. Check your connection and try again."
+    "We couldn’t reach biblio AI. Check your connection and try again."
   );
 }

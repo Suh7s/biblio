@@ -132,7 +132,7 @@ export default function AIChat() {
                   <span className="ai-badge">
                     <Icon size={16} />
                   </span>
-                  <strong>LibraAI</strong>
+                  <strong>biblio AI</strong>
                   <span>GROUNDED IN YOUR LIBRARY</span>
                 </div>
                 <p className="ai-answer-text">{message.data.answer}</p>
@@ -190,7 +190,7 @@ export default function AIChat() {
           <Icon size={21} />
           <textarea
             ref={input}
-            aria-label="Ask LibraAI"
+            aria-label="Ask biblio AI"
             placeholder="I’m curious about…"
             rows={2}
             maxLength={2000}

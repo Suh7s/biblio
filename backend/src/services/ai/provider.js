@@ -98,7 +98,7 @@ export function createProvider(config, fetchImpl = globalThis.fetch) {
       if (data?.status !== "completed" || !Array.isArray(data.output))
         throw aiError(
           502,
-          "LibraAI could not complete a grounded answer. Please try again.",
+          "biblio AI could not complete a grounded answer. Please try again.",
         );
       const parts = (data.output || [])
         .filter((v) => v.type === "message")
@@ -106,7 +106,7 @@ export function createProvider(config, fetchImpl = globalThis.fetch) {
       if (parts.some((v) => v.type === "refusal"))
         throw aiError(
           422,
-          "LibraAI could not answer that request. Try a library reading question.",
+          "biblio AI could not answer that request. Try a library reading question.",
         );
       try {
         return JSON.parse(
@@ -118,7 +118,7 @@ export function createProvider(config, fetchImpl = globalThis.fetch) {
       } catch {
         throw aiError(
           502,
-          "LibraAI returned an invalid answer. Please try again.",
+          "biblio AI returned an invalid answer. Please try again.",
         );
       }
     },

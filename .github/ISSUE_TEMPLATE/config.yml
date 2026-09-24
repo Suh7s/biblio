@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Setup and integration guide
+    url: https://github.com/Suh7s/biblio/blob/main/docs/integration.md
+    about: Check environment setup and end-to-end verification guidance.

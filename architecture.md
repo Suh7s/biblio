@@ -1,10 +1,10 @@
-You are the lead software architect for a 5-person student engineering team building **LibraMind**, a production-oriented intelligent library management platform for a university.
+You are the lead software architect for a 5-person student engineering team building **biblio**, a production-oriented intelligent library management platform for a university.
 
 This is not a simple CRUD hackathon project. The goal is to build a clean, scalable MVP that could eventually become the default digital library application for the university.
 
 ## PRODUCT VISION
 
-LibraMind combines:
+biblio combines:
 
 1. Complete digital library management
 2. Student/user accounts
@@ -22,7 +22,7 @@ LibraMind combines:
 
 Core philosophy:
 
-> Traditional library systems help users find books. LibraMind helps users discover knowledge.
+> Traditional library systems help users find books. biblio helps users discover knowledge.
 
 The system must be designed so that the AI layer is integrated with the actual library database rather than acting as a generic chatbot.
 
@@ -132,7 +132,7 @@ USER capabilities:
 * View fines
 * Save books
 * View recommendations
-* Ask LibraAI
+* Ask biblio AI
 * Generate learning paths
 * Manage profile
 
@@ -495,7 +495,7 @@ The response should include:
 
 # RAG
 
-LibraAI must be library-aware.
+biblio AI must be library-aware.
 
 Example:
 
@@ -539,7 +539,7 @@ Example response:
 Implement:
 
 1. Semantic book search
-2. Ask LibraAI
+2. Ask biblio AI
 3. Book explanation
 4. Prerequisite explanation
 5. Related-resource discovery
@@ -694,7 +694,7 @@ All developers must follow shared:
 
 Create a shared Postman collection:
 
-LIBRAMIND API
+BIBLIO API
 
 Folders:
 

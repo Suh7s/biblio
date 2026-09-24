@@ -1,4 +1,4 @@
-# LibraMind integration audit and runbook
+# biblio integration audit and runbook
 
 Audited against the merged Auth, Books, Circulation, AI, and Admin implementation and `architecture.md`. The Express/Mongoose, React/Router/Axios architecture and existing endpoint response shapes are preserved. All library features reference the canonical Book ID.
 
@@ -56,7 +56,7 @@ All nine requested flows run through real Express HTTP endpoints and a real isol
 
 | Variable | Requirement / default |
 | --- | --- |
-| `MONGODB_URI` | Required. Atlas URI or local replica-set URI, e.g. `mongodb://127.0.0.1:27017/libramind?replicaSet=rs0`. |
+| `MONGODB_URI` | Required. Atlas URI or local replica-set URI, e.g. `mongodb://127.0.0.1:27017/biblio?replicaSet=rs0`. |
 | `JWT_SECRET` | Required, unique random value of at least 32 characters; placeholder values are rejected. Generate locally with `openssl rand -hex 32`. |
 | `PORT` | `5000` |
 | `CLIENT_ORIGIN` | `http://localhost:5173`; exact browser origin. |
@@ -92,8 +92,8 @@ cp frontend/.env.example frontend/.env
 Edit those files before starting. For a new isolated local Mongo database, if Docker is available:
 
 ```sh
-docker run --name libramind-mongo -p 127.0.0.1:27017:27017 -v libramind-mongo-data:/data/db -d mongo:7 --replSet rs0 --bind_ip_all
-docker exec libramind-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+docker run --name biblio-mongo -p 127.0.0.1:27017:27017 -v biblio-mongo-data:/data/db -d mongo:7 --replSet rs0 --bind_ip_all
+docker exec biblio-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
 ```
 
 Run API and frontend in separate terminals:
@@ -133,7 +133,7 @@ The first database test run downloads MongoDB. Browser integration uses ports 50
 
 ## 6. Final Postman testing sequence
 
-Import `postman/LibraMind.integration.postman_collection.json`. Use a disposable/local library. Set `baseUrl`, existing `adminEmail`/`adminPassword`, `userPassword`, and `queueUserPassword`. Leave the cookie jar enabled. New test-user emails are generated for each run.
+Import `postman/biblio.integration.postman_collection.json`. Use a disposable/local library. Set `baseUrl`, existing `adminEmail`/`adminPassword`, `userPassword`, and `queueUserPassword`. Leave the cookie jar enabled. New test-user emails are generated for each run.
 
 1. Run **01 Core flows**: register two readers → login → `/auth/me` → logout → verify 401 → admin login → create/update/delete a disposable book → create a one-copy test resource.
 2. Login reader → verify admin 403 → search/details → borrow 201 → verify stock 0 → duplicate 409 → return → verify stock 1.
@@ -142,7 +142,7 @@ Import `postman/LibraMind.integration.postman_collection.json`. Use a disposable
 5. With live AI configured, run **02 AI flows — configured provider**: admin imports a chapter excerpt for the actual test Book ID → user semantic search → ask → verify cited chapter/book → eight-week path → recommendations. Atlas may need time after import before this folder's search assertions pass.
 6. Run **03 Cleanup** last. It deletes the test book and its AI/saved references. Test user accounts and historical returned loans remain for audit; the disposable fixture database is removed when its server stops.
 
-The existing `LibraMind.postman_collection.json` remains an endpoint reference. User/admin login requests now capture actual bearer tokens; bearer requests disable cookies so cookie precedence cannot silently change the requested identity. Logout revokes those tokens; log in again after logout. Never manufacture role-only JWTs.
+The existing `biblio.postman_collection.json` remains an endpoint reference. User/admin login requests now capture actual bearer tokens; bearer requests disable cookies so cookie precedence cannot silently change the requested identity. Logout revokes those tokens; log in again after logout. Never manufacture role-only JWTs.
 
 For a credential-free Postman demonstration, start `node backend/test/integration/serve.js`; use `http://127.0.0.1:5005/api/v1`, admin `browser-admin@integration.test`, and the test-only password `Integration-test-42!`. This fixture uses deterministic AI transport and deletes its isolated database on shutdown. It is not evidence of live OpenAI quality.
 

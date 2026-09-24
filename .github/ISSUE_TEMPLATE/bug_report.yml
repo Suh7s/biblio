@@ -1,0 +1,30 @@
+name: Bug report
+description: Report a reproducible problem in biblio.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please avoid including passwords, API keys, or private library-member data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Tell us what you expected and what occurred instead.
+      placeholder: A clear, concise description.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: List the steps that reproduce the problem.
+      placeholder: "1. Go to…\n2. Choose…\n3. See…"
+    validations:
+      required: true
+  - type: input
+    id: context
+    attributes:
+      label: Environment
+      description: Browser or runtime version and deployment type. Do not enter credentials.
+      placeholder: Chrome on macOS; local MongoDB replica set

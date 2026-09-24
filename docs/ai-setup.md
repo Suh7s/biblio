@@ -1,6 +1,6 @@
-# LibraAI setup and verification
+# biblio AI setup and verification
 
-LibraAI is integrated with authentication, books, circulation, and admin
+biblio AI is integrated with authentication, books, circulation, and admin
 modules on `main`. See [contracts](ai-contracts.md) for the shared interfaces.
 Node.js 22 or later is recommended. The AI module uses the existing Express,
 Mongoose, React, Router and Axios architecture. Tailwind utilities have an `ai-`

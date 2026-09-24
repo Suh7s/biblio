@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "LIBRAMIND API",
-    "description": "Endpoint reference. Login user/admin captures real bearer tokens; protected bearer requests disable cookies to prevent stale cookie identities overriding the selected role. Logout revokes all sessions for that account. Use LibraMind.integration.postman_collection.json for the ordered nine-flow run.",
+    "name": "BIBLIO API",
+    "description": "Endpoint reference. Login user/admin captures real bearer tokens; protected bearer requests disable cookies to prevent stale cookie identities overriding the selected role. Logout revokes all sessions for that account. Use biblio.integration.postman_collection.json for the ordered nine-flow run.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [

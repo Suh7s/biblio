@@ -20,7 +20,7 @@ const token = (role = "USER") =>
   });
 let mongo;
 before(async () => {
-  mongo = await MongoMemoryReplSet.create({ binary: { downloadDir: join(tmpdir(), 'libramind-mongodb-binaries') }, replSet: { count: 1 } });
+  mongo = await MongoMemoryReplSet.create({ binary: { downloadDir: join(tmpdir(), 'biblio-mongodb-binaries') }, replSet: { count: 1 } });
   await mongoose.connect(mongo.getUri());
   await User.init();
   await User.collection.insertMany([
