@@ -244,7 +244,9 @@ test("missing authentication is clear and cold-start recommendations never inven
   );
   await page.goto("/ai");
   await page.getByRole("button", { name: /Find my starting point/ }).click();
-  await expect(page.getByRole("alert")).toContainText("Please sign in");
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await page.goto("/ai");
   await page.getByRole("button", { name: "For you", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Start with a little curiosity" }),

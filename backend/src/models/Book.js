@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const bookSchema = new mongoose.Schema({
+  circulationVersion: { type: Number, default: 0, select: false },
   title: { type: String, required: true, trim: true, maxlength: 240, index: true },
   authors: { type: [String], required: true, validate: v => v.length > 0 },
   isbn: { type: String, required: true, unique: true, trim: true, uppercase: true },
@@ -9,8 +10,8 @@ const bookSchema = new mongoose.Schema({
   tags: { type: [String], default: [] },
   publisher: { type: String, default: '', trim: true },
   publicationYear: { type: Number, min: 0 },
-  totalCopies: { type: Number, required: true, min: 0, default: 0 },
-  availableCopies: { type: Number, required: true, min: 0, default: 0 },
+  totalCopies: { type: Number, required: true, min: 0, default: 0, validate: Number.isSafeInteger },
+  availableCopies: { type: Number, required: true, min: 0, default: 0, validate: Number.isSafeInteger },
   shelfLocation: { type: String, default: '', trim: true },
   coverImage: { type: String, default: '' }
 }, { timestamps: true });
@@ -18,6 +19,8 @@ const bookSchema = new mongoose.Schema({
 bookSchema.pre('validate', function () {
   if (this.availableCopies > this.totalCopies) this.invalidate('availableCopies', 'Available copies cannot exceed total copies.');
 });
+
+bookSchema.set('toJSON', { transform: (_doc, ret) => { delete ret.circulationVersion; return ret; } });
 
 bookSchema.index({ title: 'text', authors: 'text', description: 'text', tags: 'text', publisher: 'text' });
 bookSchema.index({ category: 1, title: 1 });

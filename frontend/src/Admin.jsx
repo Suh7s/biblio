@@ -8,7 +8,7 @@ const links = [
 const errMsg = error => error.response?.data?.message || 'Unable to load admin data. Sign in with an admin account and try again.';
 function useAdminData(path, params) {
   const [state, setState] = React.useState({ loading: true, error: '', data: null });
-  const query = new URLSearchParams(params || {}).toString();
+  const query = new URLSearchParams(Object.fromEntries(Object.entries(params || {}).filter(([, value]) => value !== ''))).toString();
   React.useEffect(() => {
     let active = true;
     setState({ loading: true, error: '', data: null });
@@ -25,7 +25,7 @@ function AdminShell({ children, title, description }) {
 }
 function LoadState({ loading, error, children }) {
   if (loading) return <div className="state"><span className="spinner"/>Loading admin data…</div>;
-  if (error) return <div className="admin-error">{error}</div>;
+  if (error) return <div className="admin-error" role="alert">{error}</div>;
   return children;
 }
 function StatCard({ label, value, detail }) { return <div className="stat-card"><span>{label}</span><strong>{value ?? '—'}</strong>{detail && <small>{detail}</small>}</div>; }
@@ -34,6 +34,11 @@ function Bars({ title, rows, valueLabel = 'items' }) {
   return <section className="admin-panel"><div className="admin-panel-head"><h2>{title}</h2><span>LAST 12 MONTHS</span></div>{rows?.length ? <div className="trend-chart" role="img" aria-label={title}>{rows.map(row => <div className="trend-column" key={row.month} title={`${row.month}: ${row.count} ${valueLabel}`}><div className="trend-bar-wrap"><i style={{ height: `${Math.max(row.count ? 5 : 0, row.count / max * 100)}%` }}/></div><span>{row.month.slice(5)}</span></div>)}</div> : <p className="admin-muted">No activity recorded yet.</p>}</section>;
 }
 function DataRows({ rows, empty, render }) { return rows?.length ? <div className="admin-rows">{rows.map((row, index) => <div className="admin-row" key={row._id || row.month || index}>{render(row, index)}</div>)}</div> : <p className="admin-muted">{empty}</p>; }
+
+function PageControls({ pagination, onPage }) {
+  if (!pagination || pagination.pages <= 1) return null;
+  return <nav className="pagination" aria-label="Table pages"><button disabled={pagination.page <= 1} onClick={() => onPage(pagination.page - 1)}>Previous page</button><span>Page {pagination.page} of {pagination.pages}</span><button disabled={pagination.page >= pagination.pages} onClick={() => onPage(pagination.page + 1)}>Next page</button></nav>;
+}
 
 export function AdminDashboard() {
   const { loading, error, data } = useAdminData('/admin/dashboard');
@@ -48,15 +53,17 @@ export function AdminDashboard() {
 }
 
 export function AdminUsers() {
+  const [page, setPage] = React.useState(1);
   const [search, setSearch] = React.useState(''); const [role, setRole] = React.useState('');
-  const { loading, error, data } = useAdminData('/admin/users', { search, role, limit: 50 });
-  return <AdminShell title="User management" description="Find readers and review account roles."><div className="admin-filters"><input aria-label="Search users" placeholder="Search name or email" value={search} onChange={e => setSearch(e.target.value)}/><select aria-label="Filter by role" value={role} onChange={e => setRole(e.target.value)}><option value="">All roles</option><option value="USER">User</option><option value="ADMIN">Admin</option></select></div><LoadState loading={loading} error={error}>{data && <><div className="admin-list-caption">{data.pagination.total} accounts</div><section className="admin-panel"><div className="admin-table-head"><span>NAME</span><span>EMAIL</span><span>ROLE</span><span>JOINED</span></div><DataRows rows={data.users} empty="No users match this search." render={user => <><div className="row-main"><strong>{user.name || 'Unnamed user'}</strong></div><span className="user-email">{user.email}</span><span className={`role-pill ${String(user.role).toLowerCase()}`}>{user.role}</span><span className="user-date">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</span></>}/></section></>}</LoadState></AdminShell>;
+  const { loading, error, data } = useAdminData('/admin/users', { search, role, page, limit: 50 });
+  return <AdminShell title="User management" description="Find readers and review account roles."><div className="admin-filters"><input aria-label="Search users" placeholder="Search name or email" value={search} onChange={e => { setPage(1); setSearch(e.target.value); }}/><select aria-label="Filter by role" value={role} onChange={e => { setPage(1); setRole(e.target.value); }}><option value="">All roles</option><option value="USER">User</option><option value="ADMIN">Admin</option></select></div><LoadState loading={loading} error={error}>{data && <><div className="admin-list-caption">{data.pagination.total} accounts</div><section className="admin-panel"><div className="admin-table-head"><span>NAME</span><span>EMAIL</span><span>ROLE</span><span>JOINED</span></div><DataRows rows={data.users} empty="No users match this search." render={user => <><div className="row-main"><strong>{user.name || 'Unnamed user'}</strong></div><span className="user-email">{user.email}</span><span className={`role-pill ${String(user.role).toLowerCase()}`}>{user.role}</span><span className="user-date">{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '—'}</span></>}/></section><PageControls pagination={data.pagination} onPage={setPage}/></>}</LoadState></AdminShell>;
 }
 
 export function AdminBorrowings() {
+  const [page, setPage] = React.useState(1);
   const [status, setStatus] = React.useState(new URLSearchParams(window.location.search).get('status') || '');
-  const { loading, error, data } = useAdminData('/admin/borrowings', { status, limit: 50 });
-  return <AdminShell title="Borrowing overview" description="Review active loans, due dates, and recent returns."><div className="admin-filters"><select aria-label="Filter by borrowing status" value={status} onChange={e => setStatus(e.target.value)}><option value="">All statuses</option><option value="BORROWED">Borrowed</option><option value="OVERDUE">Overdue</option><option value="RETURNED">Returned</option></select></div><LoadState loading={loading} error={error}>{data && <><div className="admin-list-caption">{data.pagination.total} borrowings</div><section className="admin-panel"><div className="admin-table-head borrowing-table"><span>BOOK</span><span>READER</span><span>BORROWED</span><span>DUE DATE</span><span>STATUS</span></div><DataRows rows={data.borrowings} empty="No borrowing records found." render={item => <><div className="row-main"><strong>{item.book?.title || 'Book record unavailable'}</strong><small>{item.book?.authors?.join(', ')}</small></div><span className="user-email">{item.user?.name || item.user?.email || 'Unknown user'}{item.user?.name && item.user?.email && <small>{item.user.email}</small>}</span><span className="user-date">{item.borrowedAt ? new Date(item.borrowedAt).toLocaleDateString() : '—'}</span><span className="user-date">{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}</span><span className={`row-status ${item.status?.toLowerCase()}`}>{item.status}</span></>}/></section></>}</LoadState></AdminShell>;
+  const { loading, error, data } = useAdminData('/admin/borrowings', { status, page, limit: 50 });
+  return <AdminShell title="Borrowing overview" description="Review active loans, due dates, and recent returns."><div className="admin-filters"><select aria-label="Filter by borrowing status" value={status} onChange={e => { setPage(1); setStatus(e.target.value); }}><option value="">All statuses</option><option value="BORROWED">Borrowed</option><option value="OVERDUE">Overdue</option><option value="RETURNED">Returned</option></select></div><LoadState loading={loading} error={error}>{data && <><div className="admin-list-caption">{data.pagination.total} borrowings</div><section className="admin-panel"><div className="admin-table-head borrowing-table"><span>BOOK</span><span>READER</span><span>BORROWED</span><span>DUE DATE</span><span>STATUS</span></div><DataRows rows={data.borrowings} empty="No borrowing records found." render={item => <><div className="row-main"><strong>{item.book?.title || 'Book record unavailable'}</strong><small>{item.book?.authors?.join(', ')}</small></div><span className="user-email">{item.user?.name || item.user?.email || 'Unknown user'}{item.user?.name && item.user?.email && <small>{item.user.email}</small>}</span><span className="user-date">{item.borrowedAt ? new Date(item.borrowedAt).toLocaleDateString() : '—'}</span><span className="user-date">{item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '—'}</span><span className={`row-status ${item.status?.toLowerCase()}`}>{item.status}</span></>}/></section><PageControls pagination={data.pagination} onPage={setPage}/></>}</LoadState></AdminShell>;
 }
 
 export function AdminAnalytics() {

@@ -4,12 +4,12 @@ Books, circulation, admin analytics, and library-grounded AI implementation foll
 
 ## Run locally
 
-1. Install dependencies with `npm install` in `backend/` and `frontend/`.
-2. Copy `backend/.env.example` to `backend/.env` and set `MONGODB_URI` and `JWT_SECRET`.
+1. Install dependencies with `npm ci` in `backend/` and `frontend/`. Use Node 22+.
+2. Copy `backend/.env.example` to `backend/.env` and set an Atlas/replica-set `MONGODB_URI` and a random `JWT_SECRET` of at least 32 characters.
 3. Run the API with `npm run dev` in `backend/` and the UI with `npm run dev` in `frontend/`.
 4. The web client uses `http://localhost:5000/api/v1` by default. Set `VITE_API_URL` to change it.
 
-Book reads and category reads require the shared JWT contract (`token` cookie or Bearer token) and a USER or ADMIN role. Mutations require ADMIN. Auth middleware exports `authenticate` and `authorize(...roles)` from `backend/src/middleware/auth.js`; swap that module for the shared auth team's implementation if the repository adds one.
+Book reads and category reads require the shared JWT contract (`token` cookie or Bearer token) and a USER or ADMIN role. Mutations require ADMIN. Auth middleware exports `authenticate` and `authorize(...roles)` from `backend/src/middleware/auth.js`; it is the integrated shared implementation and checks the current user record.
 
 ## API
 
@@ -27,7 +27,9 @@ Success and error bodies follow the shared `{ success, message, data/errors }` r
 
 Circulation defaults are a 14 day loan, two renewals, a three day reservation pickup window, and a fine of 1 currency unit per overdue day. Configure `LOAN_DAYS`, `MAX_RENEWALS`, `RESERVATION_HOLD_DAYS`, and `FINE_PER_DAY` to change those values.
 
-Postman collection: [`postman/LibraMind.postman_collection.json`](./postman/LibraMind.postman_collection.json). Set `token` and `userToken` to a JWT whose claims contain `id`/`sub` and `role`, plus `bookId` for a book to exercise the circulation flow. Each circulation request includes a Postman test script. Inventory updates use atomic book increments/decrements and rollback when a loan cannot be created; multi-document transactions are not required by this module.
+Use the [ordered Postman integration collection](postman/LibraMind.integration.postman_collection.json) to exercise all nine flows. The [endpoint reference](postman/LibraMind.postman_collection.json) captures tokens from real login responses. Inventory changes, reservations, notifications and fines commit together using MongoDB transactions; **Atlas or a replica set is required**.
+
+See the [integration audit and runbook](docs/integration.md) for issues/fixes, remaining deployment checks, all environment variables, exact startup commands, test commands, Postman sequence and demo sequence.
 
 ## Admin API
 
@@ -52,13 +54,13 @@ and [AI contracts](docs/ai-contracts.md) for ownership boundaries and endpoint s
 
 ## Authentication and users
 
-JWTs are signed with `JWT_SECRET`, carry the user `id` and `role`, and expire after seven days. Login sets the JWT in the `token` cookie (`HttpOnly`, `SameSite=Lax`, path `/`, `Secure` in production); logout clears it. The API also accepts `Authorization: Bearer <JWT>` for server and Postman integrations. Frontend calls use Axios `withCredentials` and never read the cookie from JavaScript. New registrations always receive the `USER` role; grant `ADMIN` through trusted database/admin provisioning only.
+JWTs are signed with `JWT_SECRET`, carry the user `id` and session version, and expire after seven days. Authorization resolves the current role from MongoDB; deleted accounts are rejected. Login sets the JWT in the `token` cookie (`HttpOnly`, `SameSite=Lax`, path `/`, `Secure` in production); logout clears it and revokes all existing sessions for the account. The API also accepts `Authorization: Bearer <JWT>` for server and Postman integrations. Frontend calls use Axios `withCredentials` and never read the cookie from JavaScript. New registrations always receive the `USER` role; grant `ADMIN` through trusted database/admin provisioning only.
 
 Auth endpoints:
 
 - `POST /api/v1/auth/register` — `{ "name": "Ada Reader", "email": "ada@example.edu", "password": "Reading123!", "interests": ["robotics"] }`
 - `POST /api/v1/auth/login` — `{ "email": "ada@example.edu", "password": "Reading123!" }`; sets the cookie.
-- `POST /api/v1/auth/logout` — clears the cookie.
+- `POST /api/v1/auth/logout` — clears the cookie and revokes all sessions.
 - `GET /api/v1/auth/me` — authenticated user.
 
 User endpoints:
@@ -72,3 +74,5 @@ Success responses follow `{ "success": true, "message": "...", "data": { "user":
 Middleware usage in Express: `router.get('/admin-only', authenticate, authorize('ADMIN'), handler)`. `authenticate` sets `req.user._id` and `req.user.role`; `authorize` accepts one or more role names, such as `authorize('USER', 'ADMIN')`. Backend checks are authoritative; frontend guards only provide navigation and an access denied page.
 
 The Postman collection includes register, login, authenticated `/auth/me`, logout, profile read/update, and history requests under **Authentication**. Postman retains the login cookie in its cookie jar for subsequent requests.
+
+Saved reading lists use the shared `SavedBook` model: `GET /api/v1/users/me/saved-books`, `PUT /api/v1/users/me/saved-books/:bookId`, and `DELETE /api/v1/users/me/saved-books/:bookId`. Each endpoint is limited to the authenticated user. The UI is at `/saved-books`; saved resources contribute to AI recommendations.

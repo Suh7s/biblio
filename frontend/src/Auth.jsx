@@ -7,22 +7,32 @@ const AuthContext = React.createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
-  const refresh = React.useCallback(async () => {
+  const [error, setError] = React.useState('');
+  const refresh = React.useCallback(async ({ blocking = false } = {}) => {
+    if (blocking) setLoading(true); setError('');
     try { const r = await api.get('/auth/me'); setUser(r.data.data.user); }
-    catch { setUser(null); }
+    catch (err) { if (err.response?.status === 401) setUser(null); else setError('Could not check your session. Please try again.'); }
     finally { setLoading(false); }
   }, []);
   React.useEffect(() => { refresh(); }, [refresh]);
-  const login = async credentials => { const r = await api.post('/auth/login', credentials); setUser(r.data.data.user); return r.data.data.user; };
+  const login = async credentials => { const r = await api.post('/auth/login', credentials); setError(''); setUser(r.data.data.user); return r.data.data.user; };
   const register = async details => (await api.post('/auth/register', details)).data.data.user;
-  const logout = async () => { try { await api.post('/auth/logout'); } finally { setUser(null); } };
-  return <AuthContext.Provider value={{ user, loading, login, register, logout, refresh }}>{children}</AuthContext.Provider>;
+  const logout = async () => { await api.post('/auth/logout'); setUser(null); };
+  React.useEffect(() => {
+    const interceptor = api.interceptors.response.use(r => r, err => {
+      if (err.response?.status === 401 && !err.config?.url?.startsWith('/auth/')) setUser(null);
+      return Promise.reject(err);
+    });
+    return () => api.interceptors.response.eject(interceptor);
+  }, []);
+  return <AuthContext.Provider value={{ user, loading, error, login, register, logout, refresh }}>{children}</AuthContext.Provider>;
 }
 export const useAuth = () => React.useContext(AuthContext);
 
 export function ProtectedRoute({ children, role }) {
-  const { user, loading } = useAuth(); const location = useLocation();
+  const { user, loading, error, refresh } = useAuth(); const location = useLocation();
   if (loading) return <main className="page"><div className="auth-loading">Checking your session…</div></main>;
+  if (error) return <main className="page"><div role="alert">{error} <button onClick={() => refresh({ blocking: true })}>Retry</button></div></main>;
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
   if (role && user.role !== role) return <main className="page"><section className="auth-card auth-denied"><div className="eyebrow">ACCESS RESTRICTED</div><h1>Administrator access required</h1><p>Your account does not have permission to open this page.</p><Link className="auth-submit" to="/books">Return to catalogue</Link></section></main>;
   return children;
@@ -53,8 +63,8 @@ export function LoginPage() { return <AuthForm mode="login"/>; }
 export function RegisterPage() { return <AuthForm mode="register"/>; }
 
 export function ProfilePage() {
-  const { user, refresh } = useAuth(); const [name, setName] = React.useState(user?.name || ''); const [interests, setInterests] = React.useState(user?.interests?.join(', ') || ''); const [message, setMessage] = React.useState('');
+  const { user, refresh } = useAuth(); const [name, setName] = React.useState(user?.name || ''); const [interests, setInterests] = React.useState(user?.interests?.join(', ') || ''); const [message, setMessage] = React.useState(''); const [busy, setBusy] = React.useState(false);
   React.useEffect(() => { setName(user?.name || ''); setInterests(user?.interests?.join(', ') || ''); }, [user]);
-  async function save(e) { e.preventDefault(); setMessage(''); try { await api.patch('/users/me', { name, interests: interests.split(',').map(x => x.trim()).filter(Boolean) }); await refresh(); setMessage('Profile saved.'); } catch (err) { setMessage(err.response?.data?.message || 'Could not save your profile.'); } }
-  return <main className="page auth-page"><section className="auth-card profile-card"><div className="eyebrow">YOUR ACCOUNT</div><h1>Profile</h1><p>Manage your account details and reading interests.</p><form onSubmit={save}><label>Name<input value={name} onChange={e => setName(e.target.value)} minLength="2" required/></label><label>Email<input value={user.email} readOnly/></label><label>Role<input value={user.role} readOnly/></label><label>Interests <small>Separate interests with commas</small><textarea rows="3" value={interests} onChange={e => setInterests(e.target.value)}/></label><button className="auth-submit">Save profile</button>{message && <p className="auth-message" role="status">{message}</p>}</form></section></main>;
+  async function save(e) { e.preventDefault(); setMessage(''); setBusy(true); try { await api.patch('/users/me', { name, interests: interests.split(',').map(x => x.trim()).filter(Boolean) }); await refresh(); setMessage('Profile saved.'); } catch (err) { setMessage(err.response?.data?.message || 'Could not save your profile.'); } finally { setBusy(false); } }
+  return <main className="page auth-page"><section className="auth-card profile-card"><div className="eyebrow">YOUR ACCOUNT</div><h1>Profile</h1><p>Manage your account details and reading interests.</p><form onSubmit={save}><label>Name<input value={name} onChange={e => setName(e.target.value)} minLength="2" required/></label><label>Email<input value={user.email} readOnly/></label><label>Role<input value={user.role} readOnly/></label><label>Interests <small>Separate interests with commas</small><textarea rows="3" value={interests} onChange={e => setInterests(e.target.value)}/></label><button className="auth-submit" disabled={busy}>{busy ? "Saving…" : "Save profile"}</button>{message && <p className="auth-message" role="status">{message}</p>}</form></section></main>;
 }
