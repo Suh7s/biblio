@@ -1,78 +1,273 @@
-# LibraMind — Library Management MVP
+# LibraMind
 
-Books, circulation, admin analytics, and library-grounded AI implementation following [`architecture.md`](./architecture.md). The admin module uses the same `{ success, message, data }` and `{ success: false, message, errors }` response contracts and shared JWT middleware.
+**A university library platform for finding, borrowing, and learning from the resources already in your library.**
 
-## Run locally
+[![Integration checks](https://github.com/Suh7s/biblio/actions/workflows/ai.yml/badge.svg?branch=main)](https://github.com/Suh7s/biblio/actions/workflows/ai.yml)
 
-1. Install dependencies with `npm ci` in `backend/` and `frontend/`. Use Node 22+.
-2. Copy `backend/.env.example` to `backend/.env` and set an Atlas/replica-set `MONGODB_URI` and a random `JWT_SECRET` of at least 32 characters.
-3. Run the API with `npm run dev` in `backend/` and the UI with `npm run dev` in `frontend/`.
-4. The web client uses `http://localhost:5000/api/v1` by default. Set `VITE_API_URL` to change it.
+LibraMind brings catalogue search, borrowing, reservations, saved reading lists, and library analytics into one application. Its AI assistant, **LibraAI**, retrieves real library resources to explain search results, suggest reading directions, and build learning paths with source citations.
 
-Book reads and category reads require the shared JWT contract (`token` cookie or Bearer token) and a USER or ADMIN role. Mutations require ADMIN. Auth middleware exports `authenticate` and `authorize(...roles)` from `backend/src/middleware/auth.js`; it is the integrated shared implementation and checks the current user record.
+[Get started](#get-started) · [LibraAI](#libraai) · [API](#api-overview) · [Testing](#testing) · [Documentation](#documentation)
 
-## API
+## What you can do
 
-- `GET /api/v1/books?page=&limit=&search=&category=&sort=&available=`
-- `GET /api/v1/books/:id`
-- `POST /api/v1/books` (ADMIN)
-- `PATCH /api/v1/books/:id` (ADMIN; includes inventory updates)
-- `DELETE /api/v1/books/:id` (ADMIN; returns 409 when active borrows/reservations reference the book)
-- `GET /api/v1/categories`
-- `POST /api/v1/borrow/:bookId`, `GET /api/v1/borrow/my`, `PATCH /api/v1/borrow/:id/return`, `PATCH /api/v1/borrow/:id/renew`
-- `POST /api/v1/reservations/:bookId`, `GET /api/v1/reservations/my`, `DELETE /api/v1/reservations/:id`
-- `GET /api/v1/fines/my`, `GET /api/v1/notifications`, `PATCH /api/v1/notifications/:id/read`
+| Area | Capabilities |
+| --- | --- |
+| **Discover** | Browse and search the catalogue, filter by category and availability, view book details, and save resources for later. |
+| **Borrow** | Borrow, return, and renew books; see current loans, reading history, due dates, and overdue fines. |
+| **Reserve** | Join the queue for an unavailable title, receive an in-app pickup notification, and collect a reserved copy. |
+| **Learn with LibraAI** | Search by meaning, ask library questions, inspect cited excerpts, and create learning paths using actual Book IDs. |
+| **Get recommendations** | Discover resources using interests, saved books, borrowing history, recent searches, and semantic similarity. |
+| **Administer** | Create and edit catalogue records, manage inventory, and view users, borrowings, reservations, and analytics through admin APIs. |
 
-Success and error bodies follow the shared `{ success, message, data/errors }` response shape. Books are stored once; other modules reference the MongoDB `_id` as `bookId`/`book`.
+The interface includes protected reader and admin pages, responsive layouts, and loading, empty, and error states. Admin user and borrowing screens currently provide read-only views.
 
-Circulation defaults are a 14 day loan, two renewals, a three day reservation pickup window, and a fine of 1 currency unit per overdue day. Configure `LOAN_DAYS`, `MAX_RENEWALS`, `RESERVATION_HOLD_DAYS`, and `FINE_PER_DAY` to change those values.
+## Architecture
 
-Use the [ordered Postman integration collection](postman/LibraMind.integration.postman_collection.json) to exercise all nine flows. The [endpoint reference](postman/LibraMind.postman_collection.json) captures tokens from real login responses. Inventory changes, reservations, notifications and fines commit together using MongoDB transactions; **Atlas or a replica set is required**.
+| Layer | Technology |
+| --- | --- |
+| Frontend | React, Vite, React Router, Axios, Tailwind utilities and CSS |
+| Backend | Node.js, Express, versioned REST APIs |
+| Database | MongoDB, Mongoose, multi-document transactions |
+| Authentication | JWTs in HTTP-only cookies, bcrypt, current-user role checks |
+| Validation | Zod and centralized error handling |
+| AI | Embeddings, Atlas Vector Search or bounded exact vector search, structured LLM source selection |
+| Verification | Node test runner, isolated MongoDB replica sets, Playwright, Postman, GitHub Actions |
 
-See the [integration audit and runbook](docs/integration.md) for issues/fixes, remaining deployment checks, all environment variables, exact startup commands, test commands, Postman sequence and demo sequence.
+```mermaid
+flowchart LR
+    Web["React + Vite"] <-->|"REST /api/v1"| API["Express API"]
+    API <--> DB[("MongoDB replica set / Atlas")]
+    API <--> AI["LibraAI services"]
+    AI <--> DB
+    AI <--> Provider["Embedding + LLM provider"]
+```
 
-## Admin API
+Books are stored once. Borrowings, reservations, saved lists, and AI chunks reference the canonical Book ID. Inventory and circulation changes commit together in transactions, including related fines and notifications.
 
-All admin routes require the shared `authenticate` middleware and `authorize('ADMIN')`:
+## Get started
 
-- `GET /api/v1/admin/dashboard`
-- `GET /api/v1/admin/users?page=&limit=&search=&role=`
-- `GET /api/v1/admin/borrowings?page=&limit=&status=&userId=`
-- `GET /api/v1/admin/reservations?page=&limit=&status=&bookId=`
-- `GET /api/v1/admin/analytics?lowAvailability=`
+### 1. Prerequisites
 
-Dashboard and analytics summaries use MongoDB counts and aggregation pipelines rather than storing derived totals. User listing reads the shared `users` collection and omits password and credential fields. Admin pages are available at `/admin`, `/admin/users`, `/admin/borrowings`, and `/admin/analytics`; `/admin/books` links to the books module.
+- **Node.js 22+** and npm.
+- **MongoDB Atlas or a local MongoDB replica set.** A standalone MongoDB instance cannot run the required transactions.
+- An **OpenAI API key** to use live AI features. Auth, catalogue, circulation, and admin features can run without it.
 
-The shared Postman collection includes integrated Books, Borrowing, Admin, AI, Authentication, and User requests. Authentication uses the shared JWT middleware described below.
+### 2. Clone and install
 
-## LibraAI (Developer 4)
+```sh
+git clone https://github.com/Suh7s/biblio.git
+cd biblio
+npm ci --prefix backend
+npm ci --prefix frontend
+```
 
-The `/ai` workspace adds grounded library guidance, semantic search, cited book cards,
-learning paths and activity-based recommendations.
-See [AI setup](docs/ai-setup.md) for provider/vector-index configuration, indexing and tests,
-and [AI contracts](docs/ai-contracts.md) for ownership boundaries and endpoint shapes.
+### 3. Configure the environment
 
-## Authentication and users
+For a fresh checkout:
 
-JWTs are signed with `JWT_SECRET`, carry the user `id` and session version, and expire after seven days. Authorization resolves the current role from MongoDB; deleted accounts are rejected. Login sets the JWT in the `token` cookie (`HttpOnly`, `SameSite=Lax`, path `/`, `Secure` in production); logout clears it and revokes all existing sessions for the account. The API also accepts `Authorization: Bearer <JWT>` for server and Postman integrations. Frontend calls use Axios `withCredentials` and never read the cookie from JavaScript. New registrations always receive the `USER` role; grant `ADMIN` through trusted database/admin provisioning only.
+```sh
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
 
-Auth endpoints:
+Edit `backend/.env` before starting the API:
 
-- `POST /api/v1/auth/register` — `{ "name": "Ada Reader", "email": "ada@example.edu", "password": "Reading123!", "interests": ["robotics"] }`
-- `POST /api/v1/auth/login` — `{ "email": "ada@example.edu", "password": "Reading123!" }`; sets the cookie.
-- `POST /api/v1/auth/logout` — clears the cookie and revokes all sessions.
-- `GET /api/v1/auth/me` — authenticated user.
+| Variable | Local setup |
+| --- | --- |
+| `MONGODB_URI` | Your Atlas connection string, or `mongodb://127.0.0.1:27017/libramind?replicaSet=rs0` for the local setup below. |
+| `JWT_SECRET` | Replace the placeholder with a unique random secret of at least 32 characters. |
+| `CLIENT_ORIGIN` | `http://localhost:5173` |
+| `PORT` | `5000` |
+| `AI_VECTOR_MODE` | `exact` for a small local collection; `atlas` when using an Atlas vector index. |
+| `OPENAI_API_KEY` | Your server-side key, if enabling live AI. |
 
-User endpoints:
+Generate a JWT secret locally with `openssl rand -hex 32` and paste the result into `JWT_SECRET`.
 
-- `GET /api/v1/users/me` — authenticated profile.
-- `PATCH /api/v1/users/me` — accepts `name` and/or `interests`.
-- `GET /api/v1/users/me/history` — the authenticated user's borrowing history (shared `Borrow` records; borrowing logic remains in the circulation module).
+The frontend example sets `VITE_API_URL=http://localhost:5000/api/v1`. Keep browser/API hostnames consistent, and keep provider keys and the JWT secret out of frontend variables. The [environment reference](docs/integration.md#4-required-environment-variables) lists every setting and default.
 
-Success responses follow `{ "success": true, "message": "...", "data": { "user": { "_id": "...", "name": "...", "email": "...", "role": "USER", "interests": [] } } }`. Password hashes are excluded. Errors follow `{ "success": false, "message": "...", "errors": {} }`; missing/invalid authentication returns 401 and insufficient permissions returns 403.
+<details>
+<summary>Run a local MongoDB replica set with Docker</summary>
 
-Middleware usage in Express: `router.get('/admin-only', authenticate, authorize('ADMIN'), handler)`. `authenticate` sets `req.user._id` and `req.user.role`; `authorize` accepts one or more role names, such as `authorize('USER', 'ADMIN')`. Backend checks are authoritative; frontend guards only provide navigation and an access denied page.
+If you are using Atlas, skip this step. With Docker running, create a local database:
 
-The Postman collection includes register, login, authenticated `/auth/me`, logout, profile read/update, and history requests under **Authentication**. Postman retains the login cookie in its cookie jar for subsequent requests.
+```sh
+docker run --name libramind-mongo -p 127.0.0.1:27017:27017 -v libramind-mongo-data:/data/db -d mongo:7 --replSet rs0 --bind_ip_all
+```
 
-Saved reading lists use the shared `SavedBook` model: `GET /api/v1/users/me/saved-books`, `PUT /api/v1/users/me/saved-books/:bookId`, and `DELETE /api/v1/users/me/saved-books/:bookId`. Each endpoint is limited to the authenticated user. The UI is at `/saved-books`; saved resources contribute to AI recommendations.
+Once MongoDB is accepting connections, initialize the replica set:
+
+```sh
+docker exec libramind-mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"127.0.0.1:27017"}]})'
+```
+
+This initialization is needed only once. For subsequent sessions, use `docker start libramind-mongo`.
+
+</details>
+
+### 4. Start the application
+
+Run these commands from the repository root in **separate terminals**:
+
+```sh
+# Terminal 1 — API
+npm run dev:api
+```
+
+```sh
+# Terminal 2 — frontend
+npm run dev:web
+```
+
+Open **[http://localhost:5173](http://localhost:5173)**. The API base URL is `http://localhost:5000/api/v1`.
+
+### 5. Create your first administrator
+
+Register an account through the UI. New accounts receive the `USER` role. Grant administrator access to that existing account using the trusted local CLI:
+
+```sh
+npm run admin:grant --prefix backend -- admin@example.edu
+```
+
+Use the registered email, then sign in again. Open `/admin/books` to add real library resources. A fresh database starts with an empty catalogue; the application does not seed invented books or AI answers.
+
+## LibraAI
+
+Try a question such as:
+
+> “I know Python and calculus. What should I read to learn how robots perceive and navigate?”
+
+LibraAI uses the library's descriptions and indexed excerpts to retrieve relevant resources. The LLM selects sources and verbatim excerpts; the server validates those selections and builds the answer from current catalogue records.
+
+```text
+Question → embedding → relevant BookChunks → source selection
+         → citation verification → answer + current book cards
+```
+
+- **Semantic search** returns ranked resources, relevance explanations, and current catalogue metadata.
+- **Grounded answers** include source attribution and clickable book cards. Unknown source IDs and unverifiable quotations are rejected.
+- **Learning paths** organize retrieved resources into a suggested schedule of 1–52 weeks.
+- **Insufficient context** produces an explicit response rather than filling gaps with books from model memory.
+
+### Index your library
+
+Add books and configure `OPENAI_API_KEY` first. Then choose the indexing steps for your environment:
+
+```sh
+# Atlas mode only — create the vector search index
+npm run ai:create-vector-index --prefix backend
+
+# Atlas or exact mode — embed existing catalogue records
+npm run ai:index --prefix backend
+```
+
+In Atlas mode, wait for the index to become queryable before searching. Re-run catalogue indexing after changing searchable book metadata; inventory-only changes do not need new embeddings.
+
+Catalogue descriptions are identified as descriptions. For chapter-level citations, an admin must import actual source excerpts using `PUT /api/v1/ai/books/:bookId/chunks`. See the [AI setup guide](docs/ai-setup.md) for the request format, model settings, index configuration, and source handling.
+
+Learning paths are reading suggestions, not verified prerequisite curricula. Similarity scores indicate retrieval similarity, not answer confidence.
+
+## Application routes
+
+| Reader pages | Admin pages |
+| --- | --- |
+| `/register`, `/login`, `/profile` | `/admin` — overview |
+| `/books`, `/books/:id` | `/admin/books` — catalogue management |
+| `/my-library`, `/reservations`, `/fines` | `/admin/users` — reader accounts |
+| `/saved-books` | `/admin/borrowings` — loan overview |
+| `/ai` — assistant, search, paths, recommendations | `/admin/analytics` — demand and inventory trends |
+
+Catalogue and library tools require sign-in. Backend authorization remains authoritative for every protected action.
+
+## API overview
+
+All endpoints use the `/api/v1` prefix.
+
+| Area | Main endpoints |
+| --- | --- |
+| Authentication | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
+| Profile and history | `GET/PATCH /users/me`, `GET /users/me/history` |
+| Saved books | `GET /users/me/saved-books`, `PUT/DELETE /users/me/saved-books/:bookId` |
+| Catalogue | `GET /books`, `GET /books/:id`, `GET /categories`; ADMIN-only book creation, updates, and deletion |
+| Borrowing | `POST /borrow/:bookId`, `GET /borrow/my`, `PATCH /borrow/:id/return`, `PATCH /borrow/:id/renew` |
+| Reservations | `POST /reservations/:bookId`, `GET /reservations/my`, `DELETE /reservations/:id` |
+| Fines and notifications | `GET /fines/my`, `GET /notifications`, `PATCH /notifications/:id/read` |
+| LibraAI | `GET /ai/search?q=`, `POST /ai/ask`, `POST /ai/learning-path`, `GET /ai/recommendations` |
+| Administration | `GET /admin/dashboard`, `/admin/users`, `/admin/borrowings`, `/admin/reservations`, `/admin/analytics` |
+
+Success responses use `{ "success": true, "message": "...", "data": {} }`. Errors use `{ "success": false, "message": "...", "errors": {} }`. Missing or invalid authentication returns **401**; insufficient permissions return **403**; circulation conflicts return **409**.
+
+Login sets an HTTP-only cookie. Roles are read from the current user record, and logout revokes all sessions for that account. Bearer tokens from real login responses are also supported for API clients.
+
+Use the [Postman endpoint collection](postman/LibraMind.postman_collection.json) for request bodies, query parameters, source management, and failure cases.
+
+## Testing
+
+From the repository root:
+
+```sh
+# Backend unit and real HTTP/database integration tests
+npm test --prefix backend
+
+# Production frontend build
+npm run build --prefix frontend
+
+# Browser checks
+cd frontend
+npx playwright install chromium
+npm run test:ai
+npm run test:integration
+```
+
+`test:ai` includes the AI and authentication UI regressions on desktop/mobile layouts. `test:integration` starts an isolated API and database and exercises the actual frontend/backend flow. The first backend test run downloads a MongoDB binary; the first browser setup downloads Chromium.
+
+The [integration audit](docs/integration.md) records **52 backend tests, 22 UI regressions, one full browser/API scenario, and 56 Postman requests with 126 assertions**. CI runs backend tests, the frontend build, and both browser suites.
+
+**AI testing boundary:** automated integration tests use real MongoDB and vector retrieval with deterministic provider responses. They do not establish live OpenAI quality or Atlas index readiness; those require a configured environment and representative library queries.
+
+### Postman walkthrough
+
+Import the [ordered integration collection](postman/LibraMind.integration.postman_collection.json), set its admin credentials and test-user passwords, and run against a disposable library:
+
+1. **Core flows:** registration/login/logout, book CRUD, borrowing/returning, role checks, reservation handoff, and admin views.
+2. **AI flows:** source import, semantic search, a cited answer, a learning path, and recommendations. Requires configured AI or the isolated test fixture.
+3. **Cleanup:** remove the test book and its indexed sources.
+
+The [runbook](docs/integration.md#6-final-postman-testing-sequence) includes the complete testing and demo sequences.
+
+## Repository layout
+
+```text
+backend/
+  src/
+    controllers/      Request handling for each domain
+    middleware/       Authentication, authorization, errors
+    models/           Shared MongoDB schemas
+    routes/           Versioned REST endpoints
+    services/         Transactional circulation and AI services
+  scripts/            Indexing, admin provisioning, data audit
+  test/               AI and cross-module integration tests
+frontend/
+  src/                Reader, admin, auth, circulation, and AI UI
+  tests/              Playwright regressions and integration flow
+postman/              Endpoint reference and ordered test collection
+docs/                 AI setup, contracts, and integration runbook
+architecture.md       Shared architecture and ownership conventions
+```
+
+## Operational notes
+
+- Default circulation rules are **14-day loans**, **two renewals**, **three-day pickup holds**, and **1 currency unit per overdue day**, assessed on return. All are configurable.
+- Before using an existing database, run `npm run audit:data --prefix backend` to inspect inventory inconsistencies, duplicate active records, queue gaps, and missing book references. The audit is read-only.
+- Production needs HTTPS, an exact `CLIENT_ORIGIN`, and a same-site frontend/API configuration. Rate-limit counters are currently in-process; scaling needs a shared store.
+- Notifications are in-app. Password recovery, email verification, email/push delivery, fine settlement, and staff workflows for editing user/loan records remain future work. The admin book list currently shows up to 100 records.
+
+## Documentation
+
+| Guide | Contents |
+| --- | --- |
+| [Shared architecture](architecture.md) | Models, module ownership, routes, and engineering conventions |
+| [AI setup](docs/ai-setup.md) | Provider configuration, indexing, source import, and retrieval behavior |
+| [AI integration contracts](docs/ai-contracts.md) | Shared Book/user/activity interfaces and AI response shapes |
+| [Integration audit and runbook](docs/integration.md) | Fixes, environment reference, deployment checks, tests, and demo sequence |
+
+For contributions, use a feature branch, follow the shared architecture, preserve canonical Book references and response contracts, and include checks appropriate to the change.
