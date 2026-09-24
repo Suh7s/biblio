@@ -1,4 +1,9 @@
-import test from "node:test";
+import test, { before, after } from "node:test";
+import mongoose from "mongoose";
+import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import User from "../../src/models/User.js";
 import assert from "node:assert/strict";
 import express from "express";
 import cookieParser from "cookie-parser";
@@ -10,9 +15,21 @@ import { errorHandler } from "../../src/middleware/errors.js";
 import { ids } from "./fixtures.js";
 process.env.JWT_SECRET = "test-only-auth-secret";
 const token = (role = "USER") =>
-  jwt.sign({ sub: ids.user, role }, process.env.JWT_SECRET, {
+  jwt.sign({ sub: role === "USER" ? ids.user : role === "ADMIN" ? ids.book : ids.second, role }, process.env.JWT_SECRET, {
     expiresIn: "1h",
   });
+let mongo;
+before(async () => {
+  mongo = await MongoMemoryReplSet.create({ binary: { downloadDir: join(tmpdir(), 'libramind-mongodb-binaries') }, replSet: { count: 1 } });
+  await mongoose.connect(mongo.getUri());
+  await User.init();
+  await User.collection.insertMany([
+    { _id: new mongoose.Types.ObjectId(ids.user), email: 'reader@routes.test', role: 'USER' },
+    { _id: new mongoose.Types.ObjectId(ids.book), email: 'admin@routes.test', role: 'ADMIN' },
+    { _id: new mongoose.Types.ObjectId(ids.second), email: 'unsupported@routes.test', role: 'OTHER' }
+  ]);
+}, { timeout: 180000 });
+after(async () => { await mongoose.disconnect(); await mongo?.stop(); });
 function app(overrides = {}) {
   const calls = [];
   const service = Object.fromEntries(

@@ -1,3 +1,5 @@
+import { z } from 'zod';
+import { parse, pagination, fail } from '../utils/errors.js';
 import mongoose from 'mongoose';
 import Book from '../models/Book.js';
 import Borrow from '../models/Borrow.js';
@@ -6,12 +8,8 @@ import Fine from '../models/Fine.js';
 
 const ACTIVE_BORROW = ['BORROWED', 'OVERDUE'];
 const ACTIVE_RESERVATION = ['WAITING', 'READY'];
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-const pageArgs = query => ({
-  page: clamp(Number.parseInt(query.page, 10) || 1, 1, 1000000),
-  limit: clamp(Number.parseInt(query.limit, 10) || 25, 1, 100)
-});
-const fail = (status, message) => Object.assign(new Error(message), { status });
+const pageArgs = query => parse(z.object(pagination), query);
+const threshold = query => parse(z.object({ lowAvailability: z.coerce.number().int().min(0).max(50).default(2) }).strict(), query).lowAvailability;
 const validId = id => mongoose.isValidObjectId(id);
 const escapeRegex = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -26,7 +24,7 @@ function monthBuckets(months = 12) {
 
 export async function dashboard(req, res) {
   const now = new Date();
-  const lowAvailabilityLimit = clamp(Number.parseInt(req.query.lowAvailability, 10) || 2, 0, 50);
+  const lowAvailabilityLimit = threshold(req.query);
   const [totalBooks, totalUsers, activeBorrowings, overdue, activeReservations, fines, popularBooks, popularCategories, recentActivity, overdueBooks, lowInventory] = await Promise.all([
     Book.countDocuments(),
     mongoose.connection.db.collection('users').countDocuments(),
@@ -68,10 +66,11 @@ export async function dashboard(req, res) {
 
 export async function listUsers(req, res) {
   const { page, limit } = pageArgs(req.query);
+  const query = parse(z.object({ ...pagination, role: z.enum(['USER', 'ADMIN']).optional(), search: z.string().trim().max(120).optional() }).strict(), req.query);
   const collection = mongoose.connection.db.collection('users');
   const filter = {};
-  if (typeof req.query.role === 'string' && ['USER', 'ADMIN'].includes(req.query.role.toUpperCase())) filter.role = req.query.role.toUpperCase();
-  const search = typeof req.query.search === 'string' ? req.query.search.trim().slice(0, 120) : '';
+  if (query.role) filter.role = query.role;
+  const search = query.search;
   if (search) {
     const term = escapeRegex(search);
     filter.$or = [{ name: { $regex: term, $options: 'i' } }, { email: { $regex: term, $options: 'i' } }];
@@ -86,7 +85,10 @@ export async function listUsers(req, res) {
 export async function listBorrowings(req, res) {
   const { page, limit } = pageArgs(req.query);
   const filter = {};
-  if (['BORROWED', 'OVERDUE', 'RETURNED'].includes(req.query.status)) filter.status = req.query.status;
+  parse(z.object({ ...pagination, status: z.enum(['BORROWED', 'OVERDUE', 'RETURNED']).optional(), userId: z.string().optional() }).strict(), req.query);
+  if (req.query.status === 'OVERDUE') filter.$or = [{ status: 'OVERDUE' }, { status: 'BORROWED', dueDate: { $lt: new Date() } }];
+  else if (req.query.status === 'BORROWED') { filter.status = 'BORROWED'; filter.dueDate = { $gte: new Date() }; }
+  else if (req.query.status === 'RETURNED') filter.status = 'RETURNED';
   if (req.query.userId) {
     if (!validId(req.query.userId)) throw fail(400, 'userId must be a valid id.');
     filter.user = new mongoose.Types.ObjectId(req.query.userId);
@@ -98,14 +100,15 @@ export async function listBorrowings(req, res) {
   const userIds = [...new Set(borrowings.map(item => String(item.user)))].map(id => new mongoose.Types.ObjectId(id));
   const users = await mongoose.connection.db.collection('users').find({ _id: { $in: userIds } }, { projection: { name: 1, email: 1, role: 1 } }).toArray();
   const userMap = new Map(users.map(user => [String(user._id), user]));
-  const rows = borrowings.map(item => ({ ...item, user: userMap.get(String(item.user)) || { _id: item.user } }));
+  const rows = borrowings.map(item => ({ ...item, status: item.status === 'BORROWED' && item.dueDate < new Date() ? 'OVERDUE' : item.status, user: userMap.get(String(item.user)) || { _id: item.user } }));
   res.json({ success: true, message: 'Borrowings retrieved.', data: { borrowings: rows, pagination: { page, limit, total, pages: Math.ceil(total / limit) } } });
 }
 
 export async function listReservations(req, res) {
   const { page, limit } = pageArgs(req.query);
   const filter = {};
-  if (['WAITING', 'READY', 'FULFILLED', 'CANCELLED', 'EXPIRED'].includes(req.query.status)) filter.status = req.query.status;
+  const query = parse(z.object({ ...pagination, status: z.enum(['WAITING', 'READY', 'FULFILLED', 'CANCELLED', 'EXPIRED']).optional(), bookId: z.string().optional() }).strict(), req.query);
+  if (query.status) filter.status = query.status;
   if (req.query.bookId) {
     if (!validId(req.query.bookId)) throw fail(400, 'bookId must be a valid id.');
     filter.book = new mongoose.Types.ObjectId(req.query.bookId);
@@ -125,7 +128,7 @@ export async function analytics(req, res) {
   const now = new Date();
   const months = monthBuckets(12);
   const since = new Date(`${months[0].month}-01T00:00:00.000Z`);
-  const lowAvailabilityLimit = clamp(Number.parseInt(req.query.lowAvailability, 10) || 2, 0, 50);
+  const lowAvailabilityLimit = threshold(req.query);
   const [borrowTrend, overdueTrend, reservationTrend, popularBooks, popularCategories, lowAvailability, inactiveInventory] = await Promise.all([
     Borrow.aggregate([{ $match: { borrowedAt: { $gte: since } } }, { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$borrowedAt' } }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }]),
     Borrow.aggregate([{ $match: { $or: [{ status: 'OVERDUE' }, { status: 'BORROWED', dueDate: { $lt: now } }] } }, { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$dueDate' } }, count: { $sum: 1 } } }, { $sort: { _id: 1 } }]),
@@ -135,7 +138,7 @@ export async function analytics(req, res) {
     Book.find({ availableCopies: { $lte: lowAvailabilityLimit } }).select('title authors category availableCopies totalCopies shelfLocation').sort({ availableCopies: 1, title: 1 }).limit(50).lean(),
     Book.aggregate([
       { $lookup: { from: 'borrows', let: { bookId: '$_id' }, pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$book', '$$bookId'] }, { $gte: ['$borrowedAt', since] }] } } }, { $limit: 1 }, { $project: { _id: 1 } }], as: 'recentBorrows' } },
-      { $match: { recentBorrows: { $size: 0 } } }, { $project: { recentBorrows: 0 } }, { $sort: { updatedAt: -1, title: 1 } }, { $limit: 50 }
+      { $match: { recentBorrows: { $size: 0 } } }, { $project: { recentBorrows: 0, circulationVersion: 0 } }, { $sort: { updatedAt: -1, title: 1 } }, { $limit: 50 }
     ])
   ]);
   const fill = rows => { const map = new Map(rows.map(row => [row._id, row.count])); return months.map(bucket => ({ ...bucket, count: map.get(bucket.month) || 0 })); };

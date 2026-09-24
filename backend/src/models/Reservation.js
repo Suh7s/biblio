@@ -10,5 +10,6 @@ const reservationSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 reservationSchema.index({ user: 1, book: 1 }, { unique: true, partialFilterExpression: { status: { $in: ['WAITING', 'READY'] } } });
+reservationSchema.index({ status: 1, expiresAt: 1, book: 1 });
 reservationSchema.index({ book: 1, status: 1, position: 1 });
 export default mongoose.model('Reservation', reservationSchema);

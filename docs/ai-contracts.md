@@ -1,6 +1,6 @@
 # Developer 4: integration contracts
 
-Based on `architecture.md` and Developer 2's `feature/books` commit 927c048.
+Based on `architecture.md` and the integrated shared models/controllers. See `integration.md` for end-to-end validation and setup.
 The AI module is integrated with the books, circulation, and admin modules on
 `main`. Shared route registration, navigation, environment settings, and Postman
 requests preserve each owner’s features.
@@ -9,8 +9,8 @@ requests preserve each owner’s features.
 
 | Owner | AI consumes | Contract |
 | --- | --- | --- |
-| Developer 1 | Authentication | `authenticate`, `authorize(...roles)` from `middleware/auth.js`; `req.user = { id, role }`; MongoDB ObjectId identity; HTTP-only `token` cookie |
-| Developer 1 | User preferences, saved books | `users`: `_id`, `interests` or `profile.interests` string array; `savedbooks`: `user`, `book`, `createdAt` |
+| Developer 1 | Authentication | `authenticate`, `authorize(...roles)` from `middleware/auth.js`; `req.user = { _id, id, role }` (current database role, revocable sessions); MongoDB ObjectId identity; HTTP-only `token` cookie |
+| Developer 1 | User preferences, saved books | `users`: `_id`, `interests` or `profile.interests` string array; `SavedBook` / `savedbooks`: `user`, `book`, `createdAt`; own-user REST API at `/users/me/saved-books` |
 | Developer 2 | Catalogue | Existing `models/Book.js`; immutable `_id`, title, authors, description, category, tags, inventory and metadata. AI never writes Book records. `/books/:id` is the frontend detail route. |
 | Developer 3 | Borrowing | `borrows`: `user`, `book`, `borrowedAt`, status in BORROWED/RETURNED/OVERDUE. AI only reads the authenticated user's bounded recent history. |
 | Developer 4 | AI knowledge/history | `BookChunk`, `SearchHistory`, AI services, `/api/v1/ai`, `/ai` |

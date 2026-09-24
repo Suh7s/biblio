@@ -1,17 +1,13 @@
 {
   "info": {
     "name": "LIBRAMIND API",
-    "description": "LibraMind API. Authentication requests use the HTTP-only token cookie, retained by Postman. Other folders include Books, Borrowing, Admin, and AI.",
+    "description": "Endpoint reference. Login user/admin captures real bearer tokens; protected bearer requests disable cookies to prevent stale cookie identities overriding the selected role. Logout revokes all sessions for that account. Use LibraMind.integration.postman_collection.json for the ordered nine-flow run.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:5000/api/v1"
-    },
-    {
-      "key": "token",
-      "value": ""
     },
     {
       "key": "bookId",
@@ -51,6 +47,14 @@
     },
     {
       "key": "licensedSourceText",
+      "value": ""
+    },
+    {
+      "key": "adminEmail",
+      "value": ""
+    },
+    {
+      "key": "adminPassword",
       "value": ""
     }
   ],
@@ -127,7 +131,46 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Login accepted\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                  "pm.test(\"Login accepted\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));",
+                  "const cookie = pm.response.headers.get('Set-Cookie'); if (pm.response.code === 200 && cookie) pm.collectionVariables.set('userToken', cookie.match(/token=([^;]+)/)[1]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login administrator",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login accepted\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));",
+                  "const cookie = pm.response.headers.get('Set-Cookie'); if (pm.response.code === 200 && cookie) pm.collectionVariables.set('adminToken', cookie.match(/token=([^;]+)/)[1]);"
                 ]
               }
             }
@@ -182,6 +225,152 @@
       ]
     },
     {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update my profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ada Lovelace\",\n  \"interests\": [\n    \"robotics\",\n    \"AI\"\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/users/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "My reading history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/me/history",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List saved books",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/me/saved-books",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save a book",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": "{{baseUrl}}/users/me/saved-books/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remove a saved book",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/users/me/saved-books/{{bookId}}",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Books",
       "item": [
         {
@@ -225,13 +414,16 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{userToken}}",
                   "type": "string"
                 }
               ]
             }
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Browse without token (401 failure case)",
@@ -243,7 +435,10 @@
               "type": "noauth"
             }
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Get book details",
@@ -256,13 +451,16 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{userToken}}",
                   "type": "string"
                 }
               ]
             }
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Create book (ADMIN)",
@@ -284,7 +482,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
@@ -304,7 +502,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Create book as USER (403 failure case)",
@@ -325,14 +526,17 @@
               "type": "bearer",
               "bearer": [
                 {
-                  "key": "userToken",
-                  "value": "{{token}}",
+                  "key": "token",
+                  "value": "{{userToken}}",
                   "type": "string"
                 }
               ]
             }
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Update book / inventory (ADMIN)",
@@ -354,13 +558,16 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
             }
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Reject invalid inventory (400 failure case)",
@@ -382,13 +589,16 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
             }
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Delete book (ADMIN; 409 if active circulation)",
@@ -401,13 +611,16 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
             }
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         }
       ]
     },
@@ -425,13 +638,16 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{userToken}}",
                   "type": "string"
                 }
               ]
             }
           },
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         }
       ]
     },
@@ -439,7 +655,7 @@
       "name": "Borrowing",
       "item": [
         {
-          "name": "Borrow book — success",
+          "name": "Borrow book \u2014 success",
           "request": {
             "method": "POST",
             "header": [],
@@ -469,10 +685,13 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Borrow duplicate — expected 409",
+          "name": "Borrow duplicate \u2014 expected 409",
           "request": {
             "method": "POST",
             "header": [],
@@ -499,7 +718,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "My borrowing history",
@@ -530,10 +752,13 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Renew loan — success",
+          "name": "Renew loan \u2014 success",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -561,10 +786,13 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Return loan — success",
+          "name": "Return loan \u2014 success",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -592,7 +820,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         }
       ]
     },
@@ -600,7 +831,7 @@
       "name": "Reservations",
       "item": [
         {
-          "name": "Reserve unavailable book — success",
+          "name": "Reserve unavailable book \u2014 success",
           "request": {
             "method": "POST",
             "header": [],
@@ -630,7 +861,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "My reservations",
@@ -661,10 +895,13 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Cancel reservation — success",
+          "name": "Cancel reservation \u2014 success",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -692,7 +929,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         }
       ]
     },
@@ -728,7 +968,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         }
       ]
     },
@@ -766,7 +1009,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Mark notification read",
@@ -797,7 +1043,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         }
       ]
     },
@@ -805,7 +1054,7 @@
       "name": "AI",
       "item": [
         {
-          "name": "Semantic search — concept query",
+          "name": "Semantic search \u2014 concept query",
           "request": {
             "method": "GET",
             "header": [],
@@ -834,7 +1083,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Available resources only",
@@ -866,7 +1118,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Ask grounded prerequisites",
@@ -907,10 +1162,13 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Learning path — 8 weeks",
+          "name": "Learning path \u2014 8 weeks",
           "request": {
             "method": "POST",
             "header": [
@@ -948,7 +1206,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Personal recommendations",
@@ -979,10 +1240,13 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Index catalogue source — ADMIN",
+          "name": "Index catalogue source \u2014 ADMIN",
           "request": {
             "method": "POST",
             "header": [],
@@ -1010,10 +1274,13 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Index actual excerpt — ADMIN (replace content before use)",
+          "name": "Index actual excerpt \u2014 ADMIN (replace content before use)",
           "request": {
             "method": "PUT",
             "header": [
@@ -1050,10 +1317,13 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Delete source — ADMIN",
+          "name": "Delete source \u2014 ADMIN",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1081,10 +1351,13 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
-          "name": "Missing authentication — clear Postman cookies first",
+          "name": "Missing authentication \u2014 clear Postman cookies first",
           "request": {
             "method": "GET",
             "header": [],
@@ -1105,7 +1378,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Blank query rejected",
@@ -1145,7 +1421,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Invalid learning duration rejected",
@@ -1185,7 +1464,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "USER cannot index sources",
@@ -1216,7 +1498,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Invalid Book ID rejected",
@@ -1247,7 +1532,10 @@
               }
             }
           ],
-          "response": []
+          "response": [],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         }
       ]
     },
@@ -1266,7 +1554,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
@@ -1283,7 +1571,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "List users",
@@ -1296,7 +1587,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
@@ -1313,7 +1604,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "List borrowings",
@@ -1326,7 +1620,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
@@ -1343,7 +1637,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "List overdue borrowings",
@@ -1356,7 +1653,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
@@ -1373,7 +1670,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "List reservations",
@@ -1386,7 +1686,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
@@ -1403,7 +1703,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Analytics",
@@ -1416,7 +1719,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token}}",
+                  "value": "{{adminToken}}",
                   "type": "string"
                 }
               ]
@@ -1433,7 +1736,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Reject missing admin token",
@@ -1456,7 +1762,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         },
         {
           "name": "Reject USER on admin endpoint",
@@ -1486,123 +1795,10 @@
                 ]
               }
             }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Authentication",
-      "item": [
-        {
-          "name": "POST",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Ada Reader\",\n  \"email\": \"ada.reader@example.edu\",\n  \"password\": \"Reading123!\",\n  \"interests\": [\n    \"robotics\",\n    \"history\"\n  ]\n}"
-            },
-            "url": "{{baseUrl}}/auth/register",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"ada.reader@example.edu\",\n  \"password\": \"Reading123!\"\n}"
-            },
-            "url": "{{baseUrl}}/auth/login",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/auth/me",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "POST",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": "{{baseUrl}}/auth/logout",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/users/me",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "PATCH",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Ada Lovelace\",\n  \"interests\": [\n    \"robotics\",\n    \"AI\"\n  ]\n}"
-            },
-            "url": "{{baseUrl}}/users/me",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "GET",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": "{{baseUrl}}/users/me/history",
-            "auth": {
-              "type": "noauth"
-            }
-          },
-          "response": []
+          ],
+          "protocolProfileBehavior": {
+            "disableCookies": true
+          }
         }
       ]
     }

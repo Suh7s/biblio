@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import { withBookTransaction } from "../circulation.js";
 import BookChunk from "../../models/BookChunk.js";
 import { catalogueText, catalogueFingerprint, hash } from "./catalogue.js";
 import { aiError } from "../../ai/config.js";
@@ -71,18 +71,12 @@ export function createIndexer({ config, provider, catalogue }) {
       });
     }
     // Embedding failure leaves the old source intact. Replacement is atomic on Atlas/replica sets.
-    const session = await mongoose.startSession();
-    try {
-      await session.withTransaction(async () => {
-        await BookChunk.deleteMany(
-          { book: book._id, "metadata.sourceId": sourceId },
-          { session },
-        );
-        await BookChunk.insertMany(chunks, { session });
-      });
-    } finally {
-      await session.endSession();
-    }
+    await withBookTransaction(book._id, async (currentBook, session) => {
+      if (catalogueFingerprint(currentBook) !== catalogueFingerprint(book))
+        throw aiError(409, "Book metadata changed during indexing. Retry with the current book.");
+      await BookChunk.deleteMany({ book: book._id, "metadata.sourceId": sourceId }, { session });
+      await BookChunk.insertMany(chunks, { session });
+    });
     return {
       bookId: String(book._id),
       sourceId,
@@ -125,11 +119,7 @@ export function createIndexer({ config, provider, catalogue }) {
       return replace(await requireBook(id), sourceId, sections, "excerpt");
     },
     async deleteSource(id, sourceId) {
-      await requireBook(id);
-      const { deletedCount } = await BookChunk.deleteMany({
-        book: id,
-        "metadata.sourceId": sourceId,
-      });
+      const { deletedCount } = await withBookTransaction(id, (_book, session) => BookChunk.deleteMany({ book: id, "metadata.sourceId": sourceId }, { session }));
       return { bookId: id, sourceId, deletedCount };
     },
   };

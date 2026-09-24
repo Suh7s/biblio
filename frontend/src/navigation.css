@@ -9,3 +9,5 @@
   .topbar nav { order: 2; flex-basis: 100%; width: 100%; overflow-x: auto; gap: 20px; padding-bottom: 5px; }
   .topbar nav a:last-of-type { display: inline; }
 }
+
+.session-error { padding: 12px 24px; color: #842626; background: #fff0ee; border-bottom: 1px solid #edc5bf; }

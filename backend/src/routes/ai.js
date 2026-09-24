@@ -59,6 +59,7 @@ export function createAiRouter(overrides = {}) {
         message: {
           success: false,
           message: "Too many AI requests. Please wait a minute and try again.",
+          errors: {},
         },
       }),
   );
