@@ -11,4 +11,7 @@ const borrowSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 borrowSchema.index({ user: 1, book: 1 }, { unique: true, partialFilterExpression: { status: { $in: ['BORROWED', 'OVERDUE'] } } });
+borrowSchema.index({ borrowedAt: -1 });
+borrowSchema.index({ dueDate: 1, status: 1 });
+borrowSchema.index({ book: 1, borrowedAt: -1 });
 export default mongoose.model('Borrow', borrowSchema);

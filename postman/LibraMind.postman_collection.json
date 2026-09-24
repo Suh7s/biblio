@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "LIBRAMIND API",
-    "description": "Books and circulation requests. Configure baseUrl, token (ADMIN/USER as relevant), userToken (USER JWT), bookId, borrowId and reservationId.",
+    "description": "LibraMind end-to-end sequence: Register → Login → browse/search/view books → borrow → My Library → reserve unavailable book → ask LibraAI → review RAG sources → Admin login → analytics → add/update a book → verify catalogue. Auth and AI requests represent architecture contracts pending those modules landing.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -32,9 +32,143 @@
     {
       "key": "notificationId",
       "value": ""
+    },
+    {
+      "key": "userEmail",
+      "value": "demo.reader@example.edu"
+    },
+    {
+      "key": "userPassword",
+      "value": "ChangeMe123!"
     }
   ],
   "item": [
+    {
+      "name": "Authentication",
+      "description": "Register and sign in with HTTP-only cookie auth. Use the same cookie jar for protected endpoints.",
+      "item": [
+        {
+          "name": "Register user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Reader\",\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/register",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Registration accepted\",()=>pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{userEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/auth/login",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login accepted\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/auth/me",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Current user loaded\",()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/logout",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Logout accepted\",()=>pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "Books",
       "item": [
@@ -293,7 +427,7 @@
       "name": "Borrowing",
       "item": [
         {
-          "name": "Borrow book \u2014 success",
+          "name": "Borrow book — success",
           "request": {
             "method": "POST",
             "header": [],
@@ -326,7 +460,7 @@
           ]
         },
         {
-          "name": "Borrow duplicate \u2014 expected 409",
+          "name": "Borrow duplicate — expected 409",
           "request": {
             "method": "POST",
             "header": [],
@@ -387,7 +521,7 @@
           ]
         },
         {
-          "name": "Renew loan \u2014 success",
+          "name": "Renew loan — success",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -418,7 +552,7 @@
           ]
         },
         {
-          "name": "Return loan \u2014 success",
+          "name": "Return loan — success",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -454,7 +588,7 @@
       "name": "Reservations",
       "item": [
         {
-          "name": "Reserve unavailable book \u2014 success",
+          "name": "Reserve unavailable book — success",
           "request": {
             "method": "POST",
             "header": [],
@@ -518,7 +652,7 @@
           ]
         },
         {
-          "name": "Cancel reservation \u2014 success",
+          "name": "Cancel reservation — success",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -648,6 +782,369 @@
                 "exec": [
                   "pm.test('Notification marked read', () => pm.response.to.have.status(200));",
                   "pm.test('Read state is true', () => pm.expect(pm.response.json().data.notification.read).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "description": "Semantic search and library-grounded LibraAI request contracts from architecture.md.",
+      "item": [
+        {
+          "name": "Semantic search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/ai/search?q=robotics+perception",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"AI request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ask LibraAI (RAG)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"I know Python and calculus and want to learn robotics. What should I read?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/ai/ask",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"AI request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate learning path",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"goal\": \"Learn robotics\",\n  \"weeks\": 8\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{baseUrl}}/ai/learning-path",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"AI request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Run dashboard and analytics requests with an ADMIN JWT in token. Authorization checks cover unauthenticated and USER roles.",
+      "item": [
+        {
+          "name": "Dashboard statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/dashboard",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/users?page=1&limit=25",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List borrowings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/borrowings?page=1&limit=25",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List overdue borrowings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/borrowings?status=OVERDUE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List reservations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/reservations?page=1&limit=25",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/analytics",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Request succeeds\",()=>pm.response.to.have.status(200));pm.test(\"Shared response contract\",()=>pm.expect(pm.response.json().success).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject missing admin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/dashboard",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin endpoint rejects anonymous requests\",()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reject USER on admin endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/dashboard",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{userToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Admin endpoint rejects USER role\",()=>pm.response.to.have.status(403));"
                 ]
               }
             }
