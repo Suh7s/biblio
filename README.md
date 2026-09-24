@@ -1,6 +1,6 @@
-# LibraMind — Books and Catalogue
+# LibraMind — Library Management MVP
 
-Books domain implementation on `feature/books`, following [`architecture.md`](./architecture.md).
+Books, circulation, and admin analytics implementation following [`architecture.md`](./architecture.md). The admin module uses the same `{ success, message, data }` and `{ success: false, message, errors }` response contracts and shared JWT middleware.
 
 ## Run locally
 
@@ -28,3 +28,17 @@ Success and error bodies follow the shared `{ success, message, data/errors }` r
 Circulation defaults are a 14 day loan, two renewals, a three day reservation pickup window, and a fine of 1 currency unit per overdue day. Configure `LOAN_DAYS`, `MAX_RENEWALS`, `RESERVATION_HOLD_DAYS`, and `FINE_PER_DAY` to change those values.
 
 Postman collection: [`postman/LibraMind.postman_collection.json`](./postman/LibraMind.postman_collection.json). Set `token` and `userToken` to a JWT whose claims contain `id`/`sub` and `role`, plus `bookId` for a book to exercise the circulation flow. Each circulation request includes a Postman test script. Inventory updates use atomic book increments/decrements and rollback when a loan cannot be created; multi-document transactions are not required by this module.
+
+## Admin API
+
+All admin routes require the shared `authenticate` middleware and `authorize('ADMIN')`:
+
+- `GET /api/v1/admin/dashboard`
+- `GET /api/v1/admin/users?page=&limit=&search=&role=`
+- `GET /api/v1/admin/borrowings?page=&limit=&status=&userId=`
+- `GET /api/v1/admin/reservations?page=&limit=&status=&bookId=`
+- `GET /api/v1/admin/analytics?lowAvailability=`
+
+Dashboard and analytics summaries use MongoDB counts and aggregation pipelines rather than storing derived totals. User listing reads the shared `users` collection and omits password and credential fields. Admin pages are available at `/admin`, `/admin/users`, `/admin/borrowings`, and `/admin/analytics`; `/admin/books` links to the books module.
+
+The shared Postman collection includes Auth and AI request contracts from `architecture.md` so the full demo sequence is laid out. Those endpoints still need their owner modules integrated before their requests can be exercised; the repository branches currently contain Books and Borrowing only.
