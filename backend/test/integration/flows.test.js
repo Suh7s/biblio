@@ -23,6 +23,15 @@ async function newBook(suffix) { return ok(await admin.post('/books', { ...bookI
 async function inventory(id, available) { const b = ok(await user.get(`/books/${id}`)).book; assert.equal(b.availableCopies, available); assert.ok(b.availableCopies >= 0 && b.availableCopies <= b.totalCopies); }
 before(async () => { fixture = await startFixture(); admin = await account('admin@integration.test', 'ADMIN'); user = await account('user@integration.test'); second = await account('second@integration.test'); third = await account('third@integration.test'); }, { timeout: 180000 });
 after(async () => { await fixture?.close(); });
+test('live and readiness health endpoints report service and database state safely', async () => {
+  const origin = fixture.base.replace(/\/api\/v1$/, '');
+  const live = await fetch(`${origin}/health/live`);
+  assert.equal(live.status, 200);
+  assert.deepEqual(await live.json(), { status: 'ok' });
+  const ready = await fetch(`${origin}/health/ready`);
+  assert.equal(ready.status, 200);
+  assert.deepEqual(await ready.json(), { status: 'ok' });
+});
 test('Flow 1: registration, login, authenticated request, logout and replay rejection over HTTP', async () => {
   const client = await account('logout@integration.test'); ok(await client.get('/users/me')); const cookie = client.cookie;
   ok(await client.post('/auth/logout')); ok(await client.get('/auth/me'), 401); client.cookie = cookie; ok(await client.get('/auth/me'), 401);

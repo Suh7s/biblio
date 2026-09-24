@@ -73,6 +73,17 @@ test("provider reports missing configuration, timeouts and rate limits without l
     );
   }
 });
+test("production AI configuration requires live credentials and Atlas vector search", () => {
+  const env = {
+    NODE_ENV: 'production',
+    OPENAI_API_KEY: 'a-real-looking-but-test-only-key-value',
+    AI_VECTOR_MODE: 'atlas',
+  };
+  assert.doesNotThrow(() => getAiConfig(env));
+  assert.throws(() => getAiConfig({ ...env, OPENAI_API_KEY: '' }));
+  assert.throws(() => getAiConfig({ ...env, OPENAI_API_KEY: 'replace-with-key' }));
+  assert.throws(() => getAiConfig({ ...env, AI_VECTOR_MODE: 'exact' }));
+});
 test("structured generation disables storage and fails on refusal/incomplete/invalid output", async () => {
   const input = {
     system: "system",

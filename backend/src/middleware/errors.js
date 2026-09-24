@@ -19,6 +19,6 @@ export function errorHandler(err, req, res, next) {
   } else if (['MongoServerSelectionError', 'MongoNetworkError'].includes(err.name)) {
     status = 503; message = 'The library database is temporarily unavailable.'; errors = {};
   }
-  if (status === 500 && !err.status) { message = 'Internal server error.'; errors = {}; }
+  if (status === 500) { message = 'Internal server error.'; errors = {}; }
   res.status(status).json({ success: false, message, errors });
 }

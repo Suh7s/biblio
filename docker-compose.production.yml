@@ -1,0 +1,68 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: ${MONGODB_URI:?Set a TLS-enabled MongoDB URI}
+      JWT_SECRET: ${JWT_SECRET:?Set a random JWT secret of at least 32 characters}
+      CLIENT_ORIGIN: ${PUBLIC_ORIGIN:?Set the public HTTPS origin}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:?Set the trusted proxy hop count}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Set the production AI provider key}
+      AI_EMBEDDING_MODEL: ${AI_EMBEDDING_MODEL:-text-embedding-3-small}
+      AI_EMBEDDING_DIMENSIONS: ${AI_EMBEDDING_DIMENSIONS:-1536}
+      AI_CHAT_MODEL: ${AI_CHAT_MODEL:-gpt-4o-mini}
+      AI_VECTOR_MODE: ${AI_VECTOR_MODE:-atlas}
+      AI_VECTOR_INDEX: ${AI_VECTOR_INDEX:-book_chunks_vector}
+      AI_MIN_RELEVANCE: ${AI_MIN_RELEVANCE:-0.65}
+      AI_EXACT_MAX_CHUNKS: ${AI_EXACT_MAX_CHUNKS:-5000}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-25000}
+    expose:
+      - "5000"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 40s
+    mem_limit: 1g
+    cpus: 1.5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: /api/v1
+    restart: unless-stopped
+    init: true
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"

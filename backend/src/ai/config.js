@@ -21,6 +21,14 @@ export function getAiConfig(env = process.env) {
       .max(10000)
       .default(5000),
     AI_TIMEOUT_MS: z.coerce.number().int().min(100).max(60000).default(25000),
+  }).superRefine((config, context) => {
+    if (env.NODE_ENV !== 'production') return;
+    if (!config.OPENAI_API_KEY.trim() || config.OPENAI_API_KEY.startsWith('replace-with')) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ['OPENAI_API_KEY'], message: 'Production requires a configured server-side AI provider key.' });
+    }
+    if (config.AI_VECTOR_MODE !== 'atlas') {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ['AI_VECTOR_MODE'], message: 'Production semantic search requires Atlas vector search.' });
+    }
   });
   const result = schema.safeParse(env);
   if (!result.success)

@@ -1,0 +1,15 @@
+.git
+.github
+.env
+.env.*
+**/.env
+**/.env.*
+**/node_modules
+**/dist
+**/coverage
+**/playwright-report
+**/test-results
+backend/test
+frontend/tests
+frontend/playwright.config.js
+frontend/playwright.integration.config.js

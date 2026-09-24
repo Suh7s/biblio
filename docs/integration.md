@@ -60,6 +60,7 @@ All nine requested flows run through real Express HTTP endpoints and a real isol
 | `JWT_SECRET` | Required, unique random value of at least 32 characters; placeholder values are rejected. Generate locally with `openssl rand -hex 32`. |
 | `PORT` | `5000` |
 | `CLIENT_ORIGIN` | `http://localhost:5173`; exact browser origin. |
+| `TRUST_PROXY_HOPS` | `0` locally; exact trusted reverse-proxy hop count in production. |
 | `NODE_ENV` | `development` locally; `production` enables Secure cookies. |
 | `LOAN_DAYS` | `14`, integer 1–365. |
 | `MAX_RENEWALS` | `2`, integer 0–100. |

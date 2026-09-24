@@ -226,6 +226,8 @@ npm run test:integration
 
 The [integration audit](docs/integration.md) records **52 backend tests, 22 UI regressions, one full browser/API scenario, and 56 Postman requests with 126 assertions**. CI runs backend tests, the frontend build, and both browser suites.
 
+For a controlled, containerized production starting point, see the [department deployment guide](docs/deployment.md). Campus SSO, privacy/retention approval, a restore-tested backup, and an infrastructure security review remain launch requirements.
+
 **AI testing boundary:** automated integration tests use real MongoDB and vector retrieval with deterministic provider responses. They do not establish live OpenAI quality or Atlas index readiness; those require a configured environment and representative library queries.
 
 ### Postman walkthrough
@@ -262,7 +264,7 @@ architecture.md       Shared architecture and ownership conventions
 
 - Default circulation rules are **14-day loans**, **two renewals**, **three-day pickup holds**, and **1 currency unit per overdue day**, assessed on return. All are configurable.
 - Before using an existing database, run `npm run audit:data --prefix backend` to inspect inventory inconsistencies, duplicate active records, queue gaps, and missing book references. The audit is read-only.
-- Production needs HTTPS, an exact `CLIENT_ORIGIN`, and a same-site frontend/API configuration. Rate-limit counters are currently in-process; scaling needs a shared store.
+- Production requires HTTPS, TLS MongoDB, a trusted proxy configuration, an exact `CLIENT_ORIGIN`, and same-site frontend/API hosting. Production AI requires an Atlas vector index and a server-side provider key. Rate-limit counters are in-process; scaling needs a shared store.
 - Notifications are in-app. Password recovery, email verification, email/push delivery, fine settlement, and staff workflows for editing user/loan records remain future work. The admin book list currently shows up to 100 records.
 
 ## Contributing

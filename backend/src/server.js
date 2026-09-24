@@ -1,10 +1,12 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
-import app from './app.js';
+import { createApp } from './app.js';
 import { serverConfig } from './config/server.js';
+import { getAiConfig } from './ai/config.js';
 import { expireReservations } from './services/circulation.js';
 
 const config = serverConfig();
+getAiConfig();
 await mongoose.connect(config.MONGODB_URI);
 const topology = await mongoose.connection.db.admin().command({ hello: 1 });
 if (!topology.setName && topology.msg !== 'isdbgrid') {
@@ -13,6 +15,7 @@ if (!topology.setName && topology.msg !== 'isdbgrid') {
 }
 // Unique indexes must exist before accepting concurrent borrowing/registration requests.
 await Promise.all(Object.values(mongoose.models).map(model => model.init()));
+const app = createApp({ trustProxyHops: config.TRUST_PROXY_HOPS, isProduction: config.NODE_ENV === 'production' });
 let sweepRunning = false;
 const sweep = async () => {
   if (sweepRunning) return;
@@ -26,6 +29,8 @@ const timer = setInterval(sweep, config.RESERVATION_SWEEP_MS);
 timer.unref();
 const server = app.listen(config.PORT, () => console.log(`biblio API listening on ${config.PORT}`));
 for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => {
+  app.locals.draining = true;
   clearInterval(timer);
   server.close(async () => { await mongoose.disconnect(); process.exit(0); });
+  setTimeout(() => process.exit(1), 30000).unref();
 });
