@@ -23,3 +23,10 @@ Book reads and category reads require the shared JWT contract (`token` cookie or
 Success and error bodies follow the shared `{ success, message, data/errors }` response shape. Books are stored once; other modules reference the MongoDB `_id` as `bookId`/`book`.
 
 Postman collection: [`postman/LibraMind.postman_collection.json`](./postman/LibraMind.postman_collection.json). Set its `token` to a JWT whose claims contain `id`/`sub` and `role`.
+
+## LibraAI (Developer 4)
+
+The `/ai` workspace adds grounded library guidance, semantic search, cited book cards,
+learning paths and activity-based recommendations.
+See [AI setup](docs/ai-setup.md) for provider/vector-index configuration, indexing and tests,
+and [AI contracts](docs/ai-contracts.md) for ownership boundaries and endpoint shapes.

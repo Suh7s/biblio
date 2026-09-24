@@ -1,0 +1,30 @@
+name: LibraAI
+on:
+  push:
+    branches: [feature/ai]
+  pull_request:
+    paths: ['backend/**', 'frontend/**', '.github/workflows/ai.yml']
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - run: npm ci --prefix backend
+      - run: npm ci --prefix frontend
+      - run: npm run test:ai --prefix backend
+      - run: npm run build --prefix frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run test:ai --prefix frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ai-browser-traces
+          path: frontend/test-results
